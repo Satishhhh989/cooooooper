@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coopergen - AI Question Paper Generator</title>
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. jsPDF CDN for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        /* Simple transition for view switching */
+        .view { display: none; }
+        .view.active { display: block; }
+        
+        /* Simple modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans antialiased">
+
+    <!-- =========== LOGIN VIEW =========== -->
+    <div id="login-page" class="view active flex items-center justify-center min-h-screen">
+        <div class="bg-white p-10 rounded-lg shadow-xl text-center">
+            <h1 class="text-4xl font-bold text-slate-800 mb-2">Coopergen</h1>
+            <p class="text-slate-600 mb-8">AI Question Paper Generator</p>
+            <button id="google-login-btn" class="flex items-center justify-center w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691c-1.258 3.053-1.99 6.47-1.99 10.123c0 3.653.732 7.07 1.99 10.123l-5.657 5.657C.63 36.311 0 30.338 0 24c0-6.338.63-12.311 1.649-17.964l5.657 8.655z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-5.657-5.657C30.01 35.08 27.208 36 24 36c-5.223 0-9.641-3.34-11.303-8H7.047v5.627C10.05 40.57 16.51 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l5.657 5.657C40.06 36.612 44 30.884 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                Sign in with Google
+            </button>
+        </div>
+    </div>
+
+    <!-- =========== APP VIEW =========== -->
+    <div id="app-page" class="view min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-md">
+            <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex-shrink-0 flex items-center">
+                        <h1 class="text-2xl font-bold text-slate-800">Coopergen</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="user-greeting" class="text-slate-600"></span>
+                        <button id="logout-btn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition duration-300">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Left Column: Form -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Create New Paper</h2>
+                    <form id="paper-form" class="space-y-4">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Board -->
+                            <div>
+                                <label for="board" class="block text-sm font-medium text-slate-700">Board</label>
+                                <input type="text" id="board" name="board" placeholder="e.g., CBSE, ICSE" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            <!-- Class/Grade -->
+                            <div>
+                                <label for="class" class="block text-sm font-medium text-slate-700">Class/Grade</label>
+                                <input type="text" id="class" name="class" placeholder="e.g., 10th, 12th" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Subject -->
+                            <div>
+                                <label for="subject" class="block text-sm font-medium text-slate-700">Subject</label>
+                                <input type="text" id="subject" name="subject" placeholder="e.g., Physics, History" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            <!-- Topic -->
+                            <div>
+                                <label for="topic" class="block text-sm font-medium text-slate-700">Topic</label>
+                                <input type="text" id="topic" name="topic" placeholder="e.g., Electricity, Mughal Empire" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Difficulty -->
+                            <div>
+                                <label for="difficulty" class="block text-sm font-medium text-slate-700">Difficulty</label>
+                                <select id="difficulty" name="difficulty" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option>Easy</option>
+                                    <option selected>Medium</option>
+                                    <option>Hard</option>
+                                </select>
+                            </div>
+                            <!-- Language -->
+                            <div>
+                                <label for="language" class="block text-sm font-medium text-slate-700">Language</label>
+                                <select id="language" name="language" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option>English</option>
+                                    <option>Hindi</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Time -->
+                            <div>
+                                <label for="time" class="block text-sm font-medium text-slate-700">Time (minutes)</label>
+                                <input type="number" id="time" name="time" value="60" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            <!-- Total Marks -->
+                            <div>
+                                <label for="marks" class="block text-sm font-medium text-slate-700">Total Marks</label>
+                                <input type="number" id="marks" name="marks" value="40" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Question Counts -->
+                        <fieldset class="border border-slate-300 p-4 rounded-md">
+                            <legend class="text-sm font-medium text-slate-700 px-2">Question Counts</legend>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label for="mcq" class="block text-sm font-medium text-slate-700">MCQ</label>
+                                    <input type="number" id="mcq" name="mcq" value="5" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="short" class="block text-sm font-medium text-slate-700">Short</label>
+                                    <input type="number" id="short" name="short" value="5" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="long" class="block text-sm font-medium text-slate-700">Long</label>
+                                    <input type="number" id="long" name="long" value="2" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="numerical" class="block text-sm font-medium text-slate-700">Numerical</label>
+                                    <input type="number" id="numerical" name="numerical" value="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- Extra Instructions -->
+                        <div>
+                            <label for="instructions" class="block text-sm font-medium text-slate-700">Extra Instructions</label>
+                            <textarea id="instructions" name="instructions" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="e.g., All questions are compulsory. Focus on derivations."></textarea>
+                        </div>
+
+                        <!-- Generate Button -->
+                        <div>
+                            <button id="generate-btn" type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                                <span id="generate-btn-text">Generate Paper</span>
+                                <svg id="generate-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Column: Preview -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Live Preview</h2>
+                        <div class="flex space-x-2">
+                            <button id="download-json-btn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition duration-300" disabled>Download JSON</button>
+                            <button id="download-pdf-btn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition duration-300" disabled>Download PDF</button>
+                        </div>
+                    </div>
+                    <pre id="preview-area" class="w-full h-96 bg-slate-800 text-slate-200 p-4 rounded-md overflow-auto text-sm whitespace-pre-wrap break-words">Click "Generate Paper" to see the AI output here...</pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- =========== NAME MODAL =========== -->
+    <div id="name-modal" class="modal-overlay">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Welcome!</h2>
+            <p class="text-slate-600 mb-6">Since this is your first time, please tell us your name.</p>
+            <form id="name-form">
+                <label for="name" class="block text-sm font-medium text-slate-700">Full Name</label>
+                <input type="text" id="name" name="name" class="mt-1 mb-6 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                <button type="submit" class="w-full py-2 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
+                    Save and Continue
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- =========== JAVASCRIPT =========== -->
+    <script type="module">
+        // 3. Import Firebase functions from CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // 4. Your web app's Firebase configuration (as provided)
+        const firebaseConfig = {
+          apiKey: "AIzaSyDCkWwVm0LuqxfHczruse9gh8pGGyI4nvg",
+          authDomain: "coopergen-5332f.firebaseapp.com",
+          projectId: "coopergen-5332f",
+          storageBucket: "coopergen-5332f.firebasestorage.app",
+          messagingSenderId: "432850916875",
+          appId: "1:432850916875:web:c5dc6709400082cab3190e"
+        };
+
+        // 5. Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // --- State ---
+        let currentUser = null;
+        let generatedPaper = null; // Store the JSON response
+
+        // --- DOM Elements ---
+        const loginPage = document.getElementById('login-page');
+        const appPage = document.getElementById('app-page');
+        const nameModal = document.getElementById('name-modal');
+        
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userGreeting = document.getElementById('user-greeting');
+        
+        const nameForm = document.getElementById('name-form');
+        const nameInput = document.getElementById('name');
+        
+        const paperForm = document.getElementById('paper-form');
+        const generateBtn = document.getElementById('generate-btn');
+        const generateBtnText = document.getElementById('generate-btn-text');
+        const generateSpinner = document.getElementById('generate-spinner');
+        
+        const previewArea = document.getElementById('preview-area');
+        const downloadJsonBtn = document.getElementById('download-json-btn');
+        const downloadPdfBtn = document.getElementById('download-pdf-btn');
+
+        // --- View Controller ---
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId)?.classList.add('active');
+            
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            document.getElementById(viewId)?.classList.add('active');
+        }
+
+        // --- Auth Logic ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in
+                currentUser = user;
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (userDoc.exists()) {
+                    // User exists, show app
+                    const userData = userDoc.data();
+                    userGreeting.textContent = `Hi, ${userData.name.split(' ')[0]}!`;
+                    showView('app-page');
+                } else {
+                    // New user, ask for name
+                    nameInput.value = user.displayName || '';
+                    showView('name-modal');
+                }
+            } else {
+                // User is signed out
+                currentUser = null;
+                showView('login-page');
+            }
+        });
+
+        // Google Login
+        googleLoginBtn.addEventListener('click', () => {
+            signInWithPopup(auth, provider)
+                .catch((error) => {
+                    console.error("Google Sign-In Error:", error);
+                    previewArea.textContent = `Google Sign-In Error: ${error.message}`;
+                });
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // New User Name Submit
+        nameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            if (name && currentUser) {
+                try {
+                    await setDoc(doc(db, "users", currentUser.uid), {
+                        name: name,
+                        email: currentUser.email,
+                        uid: currentUser.uid
+                    });
+                    userGreeting.textContent = `Hi, ${name.split(' ')[0]}!`;
+                    showView('app-page');
+                } catch (error) {
+                    console.error("Error saving name:", error);
+                }
+            }
+        });
+        
+        // --- App Logic (Form Submission) ---
+        paperForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // 1. Show loading state
+            setLoading(true);
+            previewArea.textContent = "Generating your paper... This may take a moment.";
+            generatedPaper = null;
+
+            // 2. Collect form data into a 'blueprint' object
+            const formData = new FormData(paperForm);
+            const blueprint = {};
+            for (let [key, value] of formData.entries()) {
+                // Convert numbers
+                if (['time', 'marks', 'mcq', 'short', 'long', 'numerical'].includes(key)) {
+                    value = Number(value);
+                }
+                blueprint[key] = value;
+            }
+
+            // 3. Call the secure backend API
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ blueprint }) // Send the blueprint nested
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // 4. Handle response
+                generatedPaper = data.paper; // Assuming the backend returns { paper: {...} }
+                previewArea.textContent = JSON.stringify(generatedPaper, null, 2);
+                downloadJsonBtn.disabled = false;
+                downloadPdfBtn.disabled = false;
+
+            } catch (error) {
+                console.error('Error calling /api/generate:', error);
+                previewArea.textContent = `Error: ${error.message}\n\nDid you create the api/generate.js file and add your API key to Vercel?`;
+            } finally {
+                // 5. Hide loading state
+                setLoading(false);
+            }
+        });
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                generateBtn.disabled = true;
+                generateBtnText.classList.add('hidden');
+                generateSpinner.classList.remove('hidden');
+            } else {
+                generateBtn.disabled = false;
+                generateBtnText.classList.remove('hidden');
+                generateSpinner.classList.add('hidden');
+            }
+        }
+        
+        // --- Download Logic ---
+        
+        // Download JSON
+        downloadJsonBtn.addEventListener('click', () => {
+            if (!generatedPaper) return;
+            
+            const jsonString = JSON.stringify(generatedPaper, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'coopergen-paper.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // Download PDF
+        downloadPdfBtn.addEventListener('click', () => {
+            if (!generatedPaper) return;
+
+            // Use the jsPDF library loaded from the CDN
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("Question Paper", 105, 20, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            
+            // Add metadata
+            const meta = generatedPaper.metadata;
+            if(meta) {
+                doc.text(`Board: ${meta.board || 'N/A'}`, 20, 35);
+                doc.text(`Class: ${meta.class || 'N/A'}`, 20, 42);
+                doc.text(`Subject: ${meta.subject || 'N/A'}`, 20, 49);
+                doc.text(`Time: ${meta.time || 'N/A'} mins`, 150, 35);
+                doc.text(`Marks: ${meta.totalMarks || 'N/A'}`, 150, 42);
+            }
+            
+            let yPos = 65; // Starting Y position for questions
+
+            // Simple function to add text with word wrap
+            const addWrappedText = (text, y) => {
+                const lines = doc.splitTextToSize(text, 170); // 170mm width
+                doc.text(lines, 20, y);
+                return y + (lines.length * 7); // Increment Y pos
+            };
+            
+            // Loop through sections and questions
+            if (generatedPaper.sections) {
+                generatedPaper.sections.forEach(section => {
+                    if (yPos > 270) { doc.addPage(); yPos = 20; } // Add new page
+                    doc.setFont("helvetica", "bold");
+                    yPos = addWrappedText(`Section: ${section.title} (${section.marks} Marks)`, yPos);
+                    yPos += 2; // Extra space
+
+                    section.questions.forEach(q => {
+                        if (yPos > 270) { doc.addPage(); yPos = 20; } // Add new page
+                        doc.setFont("helvetica", "normal");
+                        const qText = `${q.q_num}. ${q.question} (${q.marks} marks)`;
+                        yPos = addWrappedText(qText, yPos);
+                        yPos += 4; // Space after question
+                    });
+                    yPos += 6; // Space after section
+                });
+            }
+
+            doc.save('coopergen-paper.pdf');
+        });
+
+    </script>
+</body>
+</html>
