@@ -71,7 +71,8 @@
 <body class="bg-slate-900 text-slate-200 font-sans antialiased relative">
 
     <!-- NEW: Video Background with Overlay -->
-    <div class="fixed inset-0 -z-30">
+    <!-- NEW: Added ID and transition classes -->
+    <div id="video-background-wrapper" class="fixed inset-0 -z-30 transition-opacity duration-500">
         <video id="video-bg" class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline>
             <source src="vid.mp4" type="video/mp4">
             <!-- If this video file isn't found, the .onerror event in JS will fire -->
@@ -259,12 +260,26 @@
 
                 <!-- NEW: Glassmorphism Preview Card -->
                 <div class="bg-black/30 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/10">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-white">Live Preview</h2>
-                        <div class="flex space-x-2">
-                            <!-- NEW: Glassmorphism buttons -->
-                            <button id="download-json-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download JSON</button>
-                            <button id="download-pdf-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download PDF</button>
+                    <!-- NEW: Layout wrapper for header -->
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6">
+                        <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Live Preview</h2>
+                        
+                        <!-- NEW: Group for Toggle and Buttons -->
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                            <!-- NEW: Include Answers Toggle -->
+                            <div class="flex items-center space-x-2 justify-end mb-2 sm:mb-0">
+                                <label for="include-answers-toggle" class="text-sm font-medium text-slate-300">Include Answers</label>
+                                <button type="button" id="include-answers-toggle" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" role="switch" aria-checked="false">
+                                    <span class="sr-only">Include Answers</span>
+                                    <span id="include-answers-knob" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out translate-x-0"></span>
+                                </button>
+                            </div>
+                            
+                            <!-- Existing Buttons -->
+                            <div class="flex space-x-2 justify-end">
+                                <button id="download-json-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download JSON</button>
+                                <button id="download-pdf-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download PDF</button>
+                            </div>
                         </div>
                     </div>
                     <!-- NEW: Darker preview area -->
@@ -348,6 +363,9 @@
         const downloadJsonBtn = document.getElementById('download-json-btn');
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
         const videoBg = document.getElementById('video-bg'); // NEW
+        const videoBackgroundWrapper = document.getElementById('video-background-wrapper'); // NEW
+        const includeAnswersToggle = document.getElementById('include-answers-toggle'); // NEW
+        const includeAnswersKnob = document.getElementById('include-answers-knob'); // NEW
 
         // NEW: Error Toast Elements
         const errorToast = document.getElementById('error-toast');
@@ -360,6 +378,15 @@
             
             document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
             document.getElementById(viewId)?.classList.add('active');
+
+            // NEW: Video Background Control
+            if (viewId === 'app-page') {
+                videoBackgroundWrapper.style.opacity = '0';
+                videoBg.pause();
+            } else {
+                videoBackgroundWrapper.style.opacity = '1';
+                videoBg.play().catch(e => { /* Autoplay was fine */ });
+            }
         }
 
         // NEW: Error Handling Function
@@ -441,6 +468,19 @@
             console.log("Video background failed to load. Displaying fallback.");
             videoBg.style.display = 'none';
         };
+
+        // NEW: Toggle Switch Logic
+        includeAnswersToggle.addEventListener('click', () => {
+            const isChecked = includeAnswersToggle.getAttribute('aria-checked') === 'true';
+            includeAnswersToggle.setAttribute('aria-checked', !isChecked);
+            if (!isChecked) {
+                includeAnswersToggle.classList.replace('bg-gray-600', 'bg-blue-600');
+                includeAnswersKnob.classList.replace('translate-x-0', 'translate-x-5');
+            } else {
+                includeAnswersToggle.classList.replace('bg-blue-600', 'bg-gray-600');
+                includeAnswersKnob.classList.replace('translate-x-5', 'translate-x-0');
+            }
+        });
 
         // New User Name Submit (UPDATED with try...catch)
         nameForm.addEventListener('submit', async (e) => {
@@ -552,6 +592,9 @@
         downloadPdfBtn.addEventListener('click', () => {
             if (!generatedPaper) return;
 
+            // NEW: Check toggle state
+            const includeAnswers = includeAnswersToggle.getAttribute('aria-checked') === 'true';
+
             // Use the jsPDF library loaded from the CDN
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -605,7 +648,8 @@
                         }
                         
                         // NEW: Add answer (for review)
-                        if (q.answer) {
+                        // UPDATED: Check toggle state
+                        if (includeAnswers && q.answer) {
                             yPos += 1;
                             doc.setFont("helvetica", "italic");
                             yPos = addWrappedText(`  Answer: ${q.answer}`, yPos);
