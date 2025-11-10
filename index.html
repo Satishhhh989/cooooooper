@@ -27,7 +27,8 @@
             display: none;
             position: fixed;
             inset: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            /* Darker overlay for dark mode */
+            background-color: rgba(0, 0, 0, 0.7); 
             justify-content: center;
             align-items: center;
             z-index: 50;
@@ -39,7 +40,7 @@
             opacity: 1;
         }
 
-        /* NEW: Error Toast for showing Firebase/Network errors */
+        /* Error Toast (unchanged) */
         .error-toast {
             display: none;
             position: fixed;
@@ -66,32 +67,77 @@
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-indigo-100 via-white to-sky-100 font-sans antialiased">
+<!-- NEW: Dark mode body with new text colors -->
+<body class="bg-slate-900 text-slate-200 font-sans antialiased relative">
 
-    <!-- =========== LOGIN VIEW (Improved Styling) =========== -->
-    <div id="login-page" class="view active flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-full max-w-md">
-            <h1 class="text-5xl font-bold text-slate-800 mb-2">Coopergen</h1>
-            <p class="text-slate-600 mb-10 text-lg">AI Question Paper Generator</p>
-            <button id="google-login-btn" class="flex items-center justify-center w-full px-6 py-4 bg-white text-slate-700 font-semibold rounded-lg shadow-md border border-slate-300 hover:bg-slate-50 transition duration-300">
-                <svg class="w-6 h-6 mr-4" xmlns="http://www.w2.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691c-1.258 3.053-1.99 6.47-1.99 10.123c0 3.653.732 7.07 1.99 10.123l-5.657 5.657C.63 36.311 0 30.338 0 24c0-6.338.63-12.311 1.649-17.964l5.657 8.655z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-5.657-5.657C30.01 35.08 27.208 36 24 36c-5.223 0-9.641-3.34-11.303-8H7.047v5.627C10.05 40.57 16.51 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l5.657 5.657C40.06 36.612 44 30.884 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+    <!-- NEW: Video Background with Overlay -->
+    <div class="fixed inset-0 -z-30">
+        <video id="video-bg" class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline>
+            <source src="vid.mp4" type="video/mp4">
+            <!-- If this video file isn't found, the .onerror event in JS will fire -->
+        </video>
+        <div class="absolute inset-0 bg-black/50"></div> <!-- Translucent Overlay -->
+    </div>
+
+    <!-- NEW: CSS-only Animated Aurora Background (Now a fallback at z-20) -->
+    <div class="fixed inset-0 -z-20 overflow-hidden">
+        <div class="absolute left-[-20rem] top-[-10rem] w-[56.125rem] h-[56.125rem] bg-purple-500/30 rounded-full filter blur-[10rem]"></div>
+        <div class="absolute right-[-15rem] bottom-[-10rem] w-[50rem] h-[50rem] bg-blue-500/30 rounded-full filter blur-[10rem]"></div>
+    </div>
+
+    <!-- =========== NEW: LANDING VIEW (Page 0) =========== -->
+    <div id="landing-page" class="view active flex items-center justify-center min-h-screen p-4">
+        <div class="text-center">
+            <h1 class="text-5xl sm:text-7xl font-bold mb-4 inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
+                Generate Full Papers.
+            </h1>
+            <h2 class="text-5xl sm:text-7xl font-bold mb-8 inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
+                Instantly.
+            </h2>
+            <p class="text-xl text-slate-300 max-w-2xl mx-auto mb-12">
+                Welcome to Coopergen. The AI assistant for educators. Stop the busywork and start focusing on what truly matters.
+            </p>
+            <button id="landing-cta-btn" class="text-xl font-semibold bg-white text-blue-700 rounded-full px-10 py-4 shadow-2xl hover:bg-slate-100 transition duration-300 transform hover:scale-105">
+                Lessgoo
+            </button>
+        </div>
+    </div>
+
+    <!-- =========== LOGIN VIEW (Glassmorphism) =========== -->
+    <div id="login-page" class="view flex items-center justify-center min-h-screen p-4"> <!-- Removed 'active' class -->
+        <!-- NEW: Glassmorphism card -->
+        <div class="relative bg-black/30 backdrop-blur-xl border border-white/10 p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-full max-w-md">
+            
+            <!-- NEW: Back Button -->
+            <button id="back-to-landing-btn" class="absolute top-4 left-4 text-slate-300 hover:text-white transition duration-200 p-2 rounded-full hover:bg-white/10">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+            
+            <h1 class="text-5xl font-bold text-white mb-2">Coopergen</h1>
+            <p class="text-slate-300 mb-10 text-lg">AI Question Paper Generator</p>
+            <!-- NEW: Glassmorphism button -->
+            <button id="google-login-btn" class="flex items-center justify-center w-full px-6 py-4 bg-white/10 text-white font-semibold rounded-lg shadow-md border border-white/20 hover:bg-white/20 transition duration-300">
+                <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691c-1.258 3.053-1.99 6.47-1.99 10.123c0 3.653.732 7.07 1.99 10.123l-5.657 5.657C.63 36.311 0 30.338 0 24c0-6.338.63-12.311 1.649-17.964l5.657 8.655z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-5.657-5.657C30.01 35.08 27.208 36 24 36c-5.223 0-9.641-3.34-11.303-8H7.047v5.627C10.05 40.57 16.51 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l5.657 5.657C40.06 36.612 44 30.884 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
                 Sign in with Google
             </button>
         </div>
     </div>
 
-    <!-- =========== APP VIEW (Unchanged) =========== -->
+    <!-- =========== APP VIEW (Glassmorphism) =========== -->
     <div id="app-page" class="view min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-md">
+        <!-- NEW: Glassmorphism Header -->
+        <header class="bg-black/30 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10">
             <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-2xl font-bold text-slate-800">Coopergen</h1>
+                        <h1 class="text-2xl font-bold text-white">Coopergen</h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <span id="user-greeting" class="text-slate-600"></span>
-                        <button id="logout-btn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition duration-300">
+                        <span id="user-greeting" class="text-slate-300"></span>
+                        <!-- NEW: Glassmorphism button -->
+                        <button id="logout-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300">
                             Logout
                         </button>
                     </div>
@@ -103,53 +149,55 @@
         <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
-                <!-- Left Column: Form -->
-                <div class="bg-white p-6 rounded-lg shadow-lg">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-6">Create New Paper</h2>
+                <!-- NEW: Glassmorphism Form Card -->
+                <div class="bg-black/30 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/10">
+                    <h2 class="text-2xl font-bold text-white mb-6">Create New Paper</h2>
                     <form id="paper-form" class="space-y-4">
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Board -->
                             <div>
-                                <label for="board" class="block text-sm font-medium text-slate-700">Board</label>
-                                <input type="text" id="board" name="board" placeholder="e.g., CBSE, ICSE" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <label for="board" class="block text-sm font-medium text-slate-300">Board</label>
+                                <!-- NEW: Glassmorphism Input -->
+                                <input type="text" id="board" name="board" placeholder="e.g., CBSE, ICSE" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                             </div>
                             <!-- Class/Grade -->
                             <div>
-                                <label for="class" class="block text-sm font-medium text-slate-700">Class/Grade</label>
-                                <input type="text" id="class" name="class" placeholder="e.g., 10th, 12th" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <label for="class" class="block text-sm font-medium text-slate-300">Class/Grade</label>
+                                <input type="text" id="class" name="class" placeholder="e.g., 10th, 12th" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Subject -->
                             <div>
-                                <label for="subject" class="block text-sm font-medium text-slate-700">Subject</label>
-                                <input type="text" id="subject" name="subject" placeholder="e.g., Physics, History" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <label for="subject" class="block text-sm font-medium text-slate-300">Subject</label>
+                                <input type="text" id="subject" name="subject" placeholder="e.g., Physics, History" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                             </div>
                             <!-- Topic -->
                             <div>
-                                <label for="topic" class="block text-sm font-medium text-slate-700">Topic</label>
-                                <input type="text" id="topic" name="topic" placeholder="e.g., Electricity, Mughal Empire" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <label for="topic" class="block text-sm font-medium text-slate-300">Topic</label>
+                                <input type="text" id="topic" name="topic" placeholder="e.g., Electricity, Mughal Empire" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                             </div>
                         </div>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Difficulty -->
                             <div>
-                                <label for="difficulty" class="block text-sm font-medium text-slate-700">Difficulty</label>
-                                <select id="difficulty" name="difficulty" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                    <option>Easy</option>
-                                    <option selected>Medium</option>
-                                    <option>Hard</option>
+                                <label for="difficulty" class="block text-sm font-medium text-slate-300">Difficulty</label>
+                                <!-- NEW: Glassmorphism Select -->
+                                <select id="difficulty" name="difficulty" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                    <option class="bg-slate-800">Easy</option>
+                                    <option class="bg-slate-800" selected>Medium</option>
+                                    <option class="bg-slate-800">Hard</option>
                                 </select>
                             </div>
                             <!-- Language -->
                             <div>
-                                <label for="language" class="block text-sm font-medium text-slate-700">Language</label>
-                                <select id="language" name="language" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                                    <option>English</option>
-                                    <option>Hindi</option>
+                                <label for="language" class="block text-sm font-medium text-slate-300">Language</label>
+                                <select id="language" name="language" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                    <option class="bg-slate-800">English</option>
+                                    <option class="bg-slate-800">Hindi</option>
                                 </select>
                             </div>
                         </div>
@@ -157,46 +205,46 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <!-- Time -->
                             <div>
-                                <label for="time" class="block text-sm font-medium text-slate-700">Time (minutes)</label>
-                                <input type="number" id="time" name="time" value="60" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <label for="time" class="block text-sm font-medium text-slate-300">Time (minutes)</label>
+                                <input type="number" id="time" name="time" value="60" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                             </div>
                             <!-- Total Marks -->
                             <div>
-                                <label for="marks" class="block text-sm font-medium text-slate-700">Total Marks</label>
-                                <input type="number" id="marks" name="marks" value="40" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <label for="marks" class="block text-sm font-medium text-slate-300">Total Marks</label>
+                                <input type="number" id="marks" name="marks" value="40" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                             </div>
                         </div>
 
                         <!-- Question Counts -->
-                        <fieldset class="border border-slate-300 p-4 rounded-md">
-                            <legend class="text-sm font-medium text-slate-700 px-2">Question Counts</legend>
+                        <fieldset class="border border-white/20 p-4 rounded-md">
+                            <legend class="text-sm font-medium text-slate-300 px-2">Question Counts</legend>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
-                                    <label for="mcq" class="block text-sm font-medium text-slate-700">MCQ</label>
-                                    <input type="number" id="mcq" name="mcq" value="5" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <label for="mcq" class="block text-sm font-medium text-slate-300">MCQ</label>
+                                    <input type="number" id="mcq" name="mcq" value="5" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                                 </div>
                                 <div>
-                                    <label for="short" class="block text-sm font-medium text-slate-700">Short</label>
-                                    <input type="number" id="short" name="short" value="5" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <label for="short" class="block text-sm font-medium text-slate-300">Short</label>
+                                    <input type="number" id="short" name="short" value="5" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                                 </div>
                                 <div>
-                                    <label for="long" class="block text-sm font-medium text-slate-700">Long</label>
-                                    <input type="number" id="long" name="long" value="2" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <label for="long" class="block text-sm font-medium text-slate-300">Long</label>
+                                    <input type="number" id="long" name="long" value="2" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                                 </div>
                                 <div>
-                                    <label for="numerical" class="block text-sm font-medium text-slate-700">Numerical</label>
-                                    <input type="number" id="numerical" name="numerical" value="0" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <label for="numerical" class="block text-sm font-medium text-slate-300">Numerical</label>
+                                    <input type="number" id="numerical" name="numerical" value="0" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
                                 </div>
                             </div>
                         </fieldset>
 
                         <!-- Extra Instructions -->
                         <div>
-                            <label for="instructions" class="block text-sm font-medium text-slate-700">Extra Instructions</label>
-                            <textarea id="instructions" name="instructions" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="e.g., All questions are compulsory. Focus on derivations."></textarea>
+                            <label for="instructions" class="block text-sm font-medium text-slate-300">Extra Instructions</label>
+                            <textarea id="instructions" name="instructions" rows="3" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm" placeholder="e.g., All questions are compulsory. Focus on derivations."></textarea>
                         </div>
 
-                        <!-- Generate Button -->
+                        <!-- Generate Button (Solid for contrast) -->
                         <div>
                             <button id="generate-btn" type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
                                 <span id="generate-btn-text">Generate Paper</span>
@@ -209,29 +257,34 @@
                     </form>
                 </div>
 
-                <!-- Right Column: Preview -->
-                <div class="bg-white p-6 rounded-lg shadow-lg">
+                <!-- NEW: Glassmorphism Preview Card -->
+                <div class="bg-black/30 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/10">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-800">Live Preview</h2>
+                        <h2 class="text-2xl font-bold text-white">Live Preview</h2>
                         <div class="flex space-x-2">
-                            <button id="download-json-btn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition duration-300" disabled>Download JSON</button>
-                            <button id="download-pdf-btn" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-300 transition duration-300" disabled>Download PDF</button>
+                            <!-- NEW: Glassmorphism buttons -->
+                            <button id="download-json-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download JSON</button>
+                            <button id="download-pdf-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download PDF</button>
                         </div>
                     </div>
-                    <pre id="preview-area" class="w-full h-96 bg-slate-800 text-slate-200 p-4 rounded-md overflow-auto text-sm whitespace-pre-wrap break-words">Click "Generate Paper" to see the AI output here...</pre>
+                    <!-- NEW: Darker preview area -->
+                    <pre id="preview-area" class="w-full h-96 bg-black/50 text-slate-200 p-4 rounded-md overflow-auto text-sm whitespace-pre-wrap break-words">Click "Generate Paper" to see the AI output here...</pre>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- =========== NAME MODAL (Improved Styling) =========== -->
+    <!-- =========== NAME MODAL (Glassmorphism) =========== -->
     <div id="name-modal" class="modal-overlay">
-        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
-            <h2 class="text-2xl font-bold text-slate-800 mb-4">Welcome to Coopergen!</h2>
-            <p class="text-slate-600 mb-6">Since this is your first time, please tell us your name so we can set up your account.</p>
+        <!-- NEW: Glassmorphism card -->
+        <div class="bg-black/40 backdrop-blur-xl border border-white/10 p-10 rounded-2xl shadow-2xl w-full max-w-md">
+            <h2 class="text-2xl font-bold text-white mb-4">Welcome to Coopergen!</h2>
+            <p class="text-slate-300 mb-6">Since this is your first time, please tell us your name so we can set up your account.</p>
             <form id="name-form">
-                <label for="name" class="block text-sm font-medium text-slate-700">Full Name</label>
-                <input type="text" id="name" name="name" class="mt-1 mb-6 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                <label for="name" class="block text-sm font-medium text-slate-300">Full Name</label>
+                <!-- NEW: Glassmorphism Input -->
+                <input type="text" id="name" name="name" class="mt-1 mb-6 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm" required>
+                <!-- Button is solid for contrast -->
                 <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
                     Save and Continue
                 </button>
@@ -239,12 +292,12 @@
         </div>
     </div>
 
-    <!-- =========== NEW: Error Toast =========== -->
+    <!-- =========== Error Toast (Unchanged) =========== -->
     <div id="error-toast" class="error-toast">
         <span id="error-message"></span>
     </div>
 
-    <!-- =========== JAVASCRIPT (with improved error handling) =========== -->
+    <!-- =========== JAVASCRIPT (Unchanged) =========== -->
     <script type="module">
         // 3. Import Firebase functions from CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -275,10 +328,13 @@
         const loginPage = document.getElementById('login-page');
         const appPage = document.getElementById('app-page');
         const nameModal = document.getElementById('name-modal');
+        const landingPage = document.getElementById('landing-page'); // NEW
         
         const googleLoginBtn = document.getElementById('google-login-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const userGreeting = document.getElementById('user-greeting');
+        const landingCtaBtn = document.getElementById('landing-cta-btn'); // NEW
+        const backToLandingBtn = document.getElementById('back-to-landing-btn'); // NEW
         
         const nameForm = document.getElementById('name-form');
         const nameInput = document.getElementById('name');
@@ -291,6 +347,7 @@
         const previewArea = document.getElementById('preview-area');
         const downloadJsonBtn = document.getElementById('download-json-btn');
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
+        const videoBg = document.getElementById('video-bg'); // NEW
 
         // NEW: Error Toast Elements
         const errorToast = document.getElementById('error-toast');
@@ -348,7 +405,7 @@
             } else {
                 // User is signed out
                 currentUser = null;
-                showView('login-page');
+                showView('landing-page'); // UPDATED (was 'login-page')
             }
         });
 
@@ -365,7 +422,25 @@
         // Logout
         logoutBtn.addEventListener('click', () => {
             signOut(auth);
+            // onAuthStateChanged will handle showing the landing page
         });
+
+        // NEW: Landing Page Buttons
+        landingCtaBtn.addEventListener('click', () => {
+            showView('login-page');
+        });
+
+        backToLandingBtn.addEventListener('click', () => {
+            showView('landing-page');
+        });
+
+        // NEW: Video Background Fallback
+        // If vid.mp4 fails to load (404, etc.), hide the video element
+        // This will let the CSS aurora background show through.
+        videoBg.onerror = () => {
+            console.log("Video background failed to load. Displaying fallback.");
+            videoBg.style.display = 'none';
+        };
 
         // New User Name Submit (UPDATED with try...catch)
         nameForm.addEventListener('submit', async (e) => {
@@ -396,6 +471,9 @@
             setLoading(true);
             previewArea.textContent = "Generating your paper... This may take a moment.";
             generatedPaper = null;
+            // Disable download buttons
+            downloadJsonBtn.disabled = true;
+            downloadPdfBtn.disabled = true;
 
             // 2. Collect form data into a 'blueprint' object
             const formData = new FormData(paperForm);
@@ -517,6 +595,23 @@
                         doc.setFont("helvetica", "normal");
                         const qText = `${q.q_num}. ${q.question} (${q.marks} marks)`;
                         yPos = addWrappedText(qText, yPos);
+
+                        // NEW: Add options for MCQs
+                        if (q.options && Array.isArray(q.options)) {
+                            yPos += 2; // small space
+                            q.options.forEach(opt => {
+                                yPos = addWrappedText(`  - ${opt}`, yPos);
+                            });
+                        }
+                        
+                        // NEW: Add answer (for review)
+                        if (q.answer) {
+                            yPos += 1;
+                            doc.setFont("helvetica", "italic");
+                            yPos = addWrappedText(`  Answer: ${q.answer}`, yPos);
+                            doc.setFont("helvetica", "normal");
+                        }
+
                         yPos += 4; // Space after question
                     });
                     yPos += 6; // Space after section
