@@ -8,7 +8,7 @@
 // We are using the CommonJS 'require' syntax because it's the most
 // robust and default for Vercel's Node.js runtime environment.
 // We can't use 'import' here without a package.json.
-const fetch = require('node-fetch');
+
 
 // This is the main handler function Vercel will run
 module.exports = async (req, res) => {
