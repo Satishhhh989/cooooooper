@@ -127,8 +127,8 @@
     </div>
 
     <!-- =========== APP VIEW (Glassmorphism) =========== -->
-    <!-- NEW: Added flex, flex-col, h-screen. Removed min-h-screen -->
-    <div id="app-page" class="view flex flex-col h-screen">
+    <!-- NEW: Reverted to min-h-screen. Removed flex, flex-col, h-screen -->
+    <div id="app-page" class="view min-h-screen">
         <!-- NEW: Glassmorphism Header (no layout changes) -->
         <header class="bg-black/30 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10">
             <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -154,11 +154,11 @@
         <!-- Main Content -->
         <!-- 
             NEW LAYOUT: 
-            - This <main> tag now fills the *remaining* screen height.
-            - It is the *only* part of the app that will scroll.
-            - This fixes the "scrap" layout 100%.
+            - Reverted to a normal page flow.
+            - Removed flex-1 and overflow-y-auto.
+            - The *whole page* will scroll if content is long, which is normal.
         -->
-        <main id="app-main-content" class="flex-1 overflow-y-auto container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <main id="app-main-content" class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             <!-- 
                 The grid inside is unchanged. On mobile, it will stack,
                 but now it will scroll inside this <main> container.
@@ -437,9 +437,10 @@
             // We run this in a timeout to ensure the view is visible FIRST.
             setTimeout(() => {
                 window.scrollTo(0, 0);
-                if (appMainContent) {
-                    appMainContent.scrollTo(0, 0);
-                }
+                // The 'appMainContent' no longer scrolls, so we don't need this:
+                // if (appMainContent) {
+                //     appMainContent.scrollTo(0, 0);
+                // }
             }, 0); // 0ms timeout is perfect
 
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
