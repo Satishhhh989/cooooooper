@@ -1,17 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coopergen - AI Question Paper Generator</title>
-    <!-- 1. Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. jsPDF CDN for PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
     <style>
-        /* Improved view switching with fade transition */
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #e2e8f0; /* text-slate-200 */
+        }
+        
+        /* Glassmorphism card style */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.3); /* bg-slate-800/30 */
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem; /* rounded-2xl */
+        }
+
+        /* Glassmorphism input style */
+        .glass-input {
+            background: rgba(15, 23, 42, 0.5); /* bg-slate-900/50 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e2e8f0; /* text-slate-200 */
+        }
+        .glass-input::placeholder {
+            color: #94a3b8; /* text-slate-400 */
+        }
+        
+        /* Animated Aurora Background */
+        .aurora-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -10;
+        }
+        .aurora-blob {
+            position: absolute;
+            filter: blur(100px);
+            opacity: 0.3;
+            border-radius: 50%;
+        }
+        .blob-1 {
+            background-color: #3b82f6; /* blue-500 */
+            width: 400px;
+            height: 400px;
+            top: 10%;
+            left: 10%;
+            animation: moveBlob1 20s infinite alternate;
+        }
+        .blob-2 {
+            background-color: #8b5cf6; /* violet-500 */
+            width: 500px;
+            height: 500px;
+            top: 50%;
+            left: 60%;
+            animation: moveBlob2 25s infinite alternate;
+        }
+        @keyframes moveBlob1 {
+            from { transform: translate(-50px, -50px) rotate(0deg); }
+            to { transform: translate(100px, 150px) rotate(360deg); }
+        }
+        @keyframes moveBlob2 {
+            from { transform: translate(50px, 50px) rotate(0deg); }
+            to { transform: translate(-100px, -150px) rotate(-360deg); }
+        }
+
+        /* Video Background */
+        #video-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -5;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.5s ease;
+        }
+
+        /* View transitions */
         .view {
             display: none;
             opacity: 0;
@@ -21,773 +96,1083 @@
             display: block;
             opacity: 1;
         }
-        
-        /* Improved modal styles with fade transition */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            /* Darker overlay for dark mode */
-            background-color: rgba(0, 0, 0, 0.7); 
-            justify-content: center;
-            align-items: center;
-            z-index: 50;
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
+
+        /* Custom toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 24px;
         }
-        .modal-overlay.active {
-            display: flex;
-            opacity: 1;
+        .switch input { display: none; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155; /* bg-slate-700 */
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #3b82f6; /* bg-blue-600 */
+        }
+        input:checked + .slider:before {
+            transform: translateX(16px);
         }
 
-        /* Error Toast (unchanged) */
-        .error-toast {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #ef4444; /* red-500 */
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            z-index: 100;
-            font-weight: 500;
-            max-w-lg;
-            text-align: center;
+        /* Custom scrollbar for "My Papers" */
+        .papers-list::-webkit-scrollbar {
+            width: 6px;
         }
-        .error-toast.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
+        .papers-list::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5); /* bg-slate-900/50 */
+            border-radius: 10px;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translate(-50%, 10px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
+        .papers-list::-webkit-scrollbar-thumb {
+            background: #3b82f6; /* bg-blue-600 */
+            border-radius: 10px;
         }
+        .papers-list::-webkit-scrollbar-thumb:hover {
+            background: #2563eb; /* bg-blue-700 */
+        }
+
     </style>
 </head>
-<!-- NEW: Dark mode body with new text colors -->
-<body class="bg-slate-900 text-slate-200 font-sans antialiased relative">
 
-    <!-- NEW: Video Background with Overlay -->
-    <!-- NEW: Added ID and transition classes -->
-    <div id="video-background-wrapper" class="fixed inset-0 -z-30 transition-opacity duration-500">
-        <video id="video-bg" class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline>
-            <source src="vid.mp4" type="video/mp4">
-            <!-- If this video file isn't found, the .onerror event in JS will fire -->
-        </video>
-        <div class="absolute inset-0 bg-black/50"></div> <!-- Translucent Overlay -->
+<body class="bg-slate-900 h-full">
+
+    <!-- Backgrounds -->
+    <video autoplay muted loop id="video-bg" class="hidden">
+        <source src="vid.mp4" type="video/mp4">
+    </video>
+    <div class="aurora-bg" id="aurora-bg">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
     </div>
 
-    <!-- NEW: CSS-only Animated Aurora Background (Now a fallback at z-20) -->
-    <div class="fixed inset-0 -z-20 overflow-hidden">
-        <div class="absolute left-[-20rem] top-[-10rem] w-[56.125rem] h-[56.125rem] bg-purple-500/30 rounded-full filter blur-[10rem]"></div>
-        <div class="absolute right-[-15rem] bottom-[-10rem] w-[50rem] h-[50rem] bg-blue-500/30 rounded-full filter blur-[10rem]"></div>
-    </div>
+    <!-- Main Container -->
+    <div class="relative min-h-full">
 
-    <!-- =========== NEW: LANDING VIEW (Page 0) =========== -->
-    <div id="landing-page" class="view active flex items-center justify-center min-h-screen p-4">
-        <div class="text-center">
-            <h1 class="text-5xl sm:text-7xl font-bold mb-4 inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
-                Generate Full Papers.
-            </h1>
-            <h2 class="text-5xl sm:text-7xl font-bold mb-8 inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
-                Instantly.
-            </h2>
-            <p class="text-xl text-slate-300 max-w-2xl mx-auto mb-12">
-                Welcome to Coopergen. The AI assistant for educators. Stop the busywork and start focusing on what truly matters.
-            </p>
-            <button id="landing-cta-btn" class="text-xl font-semibold bg-white text-blue-700 rounded-full px-10 py-4 shadow-2xl hover:bg-slate-100 transition duration-300 transform hover:scale-105">
-                Lessgoo
-            </button>
+        <!-- ===== LANDING PAGE (VIEW 0) ===== -->
+        <div id="landing-page" class="view active flex flex-col items-center justify-center text-center h-screen p-4">
+            <div classs="relative z-10">
+                <h1 class="text-5xl sm:text-7xl md:text-8xl font-bold text-white mb-6">
+                    Coopergen
+                </h1>
+                <p class="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl">
+                    The AI Question Paper Generator. Create flawless, secure question papers in seconds, not hours.
+                </p>
+                <button id="get-started-btn" class="bg-white text-slate-900 font-semibold py-3 px-8 rounded-full text-lg hover:bg-slate-200 transition-all shadow-lg">
+                    Lessgoo
+                </button>
+            </div>
         </div>
-    </div>
 
-    <!-- =========== LOGIN VIEW (Glassmorphism) =========== -->
-    <div id="login-page" class="view flex items-center justify-center min-h-screen p-4"> <!-- Removed 'active' class -->
-        <!-- NEW: Glassmorphism card -->
-        <div class="relative bg-black/30 backdrop-blur-xl border border-white/10 p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-full max-w-md">
-            
-            <!-- NEW: Back Button -->
-            <button id="back-to-landing-btn" class="absolute top-4 left-4 text-slate-300 hover:text-white transition duration-200 p-2 rounded-full hover:bg-white/10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-            </button>
-            
-            <h1 class="text-5xl font-bold text-white mb-2">Coopergen</h1>
-            <p class="text-slate-300 mb-10 text-lg">AI Question Paper Generator</p>
-            <!-- NEW: Glassmorphism button -->
-            <button id="google-login-btn" class="flex items-center justify-center w-full px-6 py-4 bg-white/10 text-white font-semibold rounded-lg shadow-md border border-white/20 hover:bg-white/20 transition duration-300">
-                <svg class="w-6 h-6 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691c-1.258 3.053-1.99 6.47-1.99 10.123c0 3.653.732 7.07 1.99 10.123l-5.657 5.657C.63 36.311 0 30.338 0 24c0-6.338.63-12.311 1.649-17.964l5.657 8.655z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-5.657-5.657C30.01 35.08 27.208 36 24 36c-5.223 0-9.641-3.34-11.303-8H7.047v5.627C10.05 40.57 16.51 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l5.657 5.657C40.06 36.612 44 30.884 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
-                Sign in with Google
-            </button>
+        <!-- ===== LOGIN PAGE (VIEW 1) ===== -->
+        <div id="login-page" class="view flex flex-col items-center justify-center h-screen p-4">
+            <div class="w-full max-w-md">
+                <div class="glass-card p-8 text-center">
+                    <h2 class="text-3xl font-semibold text-white mb-6">Welcome Back</h2>
+                    <p class="text-slate-300 mb-8">Sign in to continue to your dashboard.</p>
+                    <button id="login-btn" class="w-full bg-white text-slate-900 font-medium py-3 px-6 rounded-lg flex items-center justify-center gap-3 hover:bg-slate-200 transition">
+                        <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691L21.303 24l-5.657 5.657C11.353 34.046 6.053 29.268 6.053 24c0-2.225.55-4.328 1.51-6.142L6.306 14.691z"></path><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.222 0-9.641-3.27-11.283-7.94l-5.736 5.699C9.043 40.619 15.935 44 24 44z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c.792 2.23.173 4.767-1.303 6.586l6.19 5.238C42.021 36.326 44 30.606 44 24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                        Sign in with Google
+                    </button>
+                    <button id="back-to-landing-btn" class="w-full mt-4 text-slate-400 hover:text-white transition">
+                        &larr; Back
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- =========== APP VIEW (Glassmorphism) =========== -->
-    <!-- NEW: Reverted to min-h-screen. Removed flex, flex-col, h-screen -->
-    <div id="app-page" class="view min-h-screen">
-        <!-- NEW: Glassmorphism Header (no layout changes) -->
-        <header class="bg-black/30 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10">
-            <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
-                    <div class="flex-shrink-0 flex items-center">
-                        <h1 class="text-2xl font-bold text-white">Coopergen</h1>
+        <!-- ===== NAME MODAL (VIEW 2) ===== -->
+        <div id="name-modal" class="view fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px);">
+            <div class="glass-card w-full max-w-md p-8">
+                <h2 class="text-3xl font-semibold text-white mb-4">One Last Step</h2>
+                <p class="text-slate-300 mb-6">Please tell us your name. This will be used to personalize your account.</p>
+                <form id="name-form">
+                    <div class="mb-4">
+                        <label for="name" class="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                        <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Satish Kumar" required>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <span id="user-greeting" class="text-slate-300"></span>
-                        <!-- NEW: Profile Button -->
-                        <button id="profile-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300">
-                            Profile
+                    <button type="submit" id="save-name-btn" class="w-full bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 transition">
+                        Save and Continue
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== PROFILE MODAL (VIEW 3) ===== -->
+        <div id="profile-modal" class="view fixed inset-0 z-50 flex items-center justify-center p-4" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(10px);">
+            <div class="glass-card w-full max-w-md p-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-3xl font-semibold text-white">My Profile</h2>
+                    <button id="close-profile-btn" class="text-slate-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <form id="profile-form">
+                    <div class="mb-4">
+                        <label for="profile-email" class="block text-sm font-medium text-slate-300 mb-2">Email</label>
+                        <input type="email" id="profile-email" class="w-full px-4 py-3 rounded-lg glass-input bg-slate-800/50 cursor-not-allowed" disabled>
+                    </div>
+                    <div class="mb-6">
+                        <label for="profile-name" class="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+                        <input type="text" id="profile-name" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Satish Kumar" required>
+                    </div>
+                    <div class="flex justify-end gap-4">
+                        <button type="button" id="cancel-profile-btn" class="bg-slate-700 text-white font-medium py-2 px-6 rounded-lg hover:bg-slate-600 transition">
+                            Cancel
                         </button>
-                        <!-- NEW: Glassmorphism button -->
-                        <button id="logout-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300">
-                            Logout
+                        <button type="submit" id="save-profile-btn" class="bg-blue-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-blue-700 transition">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- ===== MY PAPERS DASHBOARD (VIEW 4) ===== -->
+        <div id="papers-page" class="view min-h-screen">
+            <!-- Header (Re-used) -->
+            <header class="sticky top-0 z-40 glass-card mx-4 sm:mx-8 mt-4">
+                <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <h1 class="text-2xl font-bold text-white cursor-pointer" id="header-title-papers">Coopergen</h1>
+                        <button id="back-to-app-btn" class="text-slate-300 hover:text-white transition">&larr; Back to Generator</button>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="user-greeting-papers" class="text-slate-300 hidden sm:block">Hi, User</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="container mx-auto px-4 sm:px-6 py-8">
+                <h2 class="text-3xl font-semibold text-white mb-6">My Saved Papers</h2>
+                <div id="papers-list-container" class="papers-list glass-card p-6 min-h-[400px] max-h-[70vh] overflow-y-auto">
+                    <!-- Loading state -->
+                    <div id="papers-loading" class="text-center text-slate-400 py-20">
+                        <p>Loading your saved papers...</p>
+                    </div>
+                    <!-- Empty state -->
+                    <div id="papers-empty" class="text-center text-slate-400 py-20 hidden">
+                        <h3 class="text-xl font-medium mb-2">No papers found</h3>
+                        <p>Generate a new paper and click "Save" to see it here.</p>
+                    </div>
+                    <!-- Papers will be injected here -->
+                </div>
+            </main>
+        </div>
+
+
+        <!-- ===== MAIN APP PAGE (VIEW 5) ===== -->
+        <div id="app-page" class="view min-h-screen">
+            <!-- Header -->
+            <header class="sticky top-0 z-40 glass-card mx-4 sm:mx-8 mt-4">
+                <div class="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+                    <div class="flex items-center gap-6">
+                        <h1 class="text-2xl font-bold text-white cursor-pointer" id="header-title-app">Coopergen</h1>
+                        <button id="my-papers-btn" class="text-slate-300 hover:text-white transition hidden sm:block">My Papers</button>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="user-greeting" class="text-slate-300 hidden sm:block">Hi, User</span>
+                        <button id="profile-btn" class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-semibold text-white hover:bg-blue-700 transition" title="My Profile">
+                            <span id="user-initial">U</span>
+                        </button>
+                        <button id="logout-btn" class="text-slate-400 hover:text-white transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
                         </button>
                     </div>
                 </div>
-            </div>
-        </header>
+            </header>
 
-        <!-- Main Content -->
-        <!-- 
-            NEW LAYOUT: 
-            - Reverted to a normal page flow.
-            - Removed flex-1 and overflow-y-auto.
-            - The *whole page* will scroll if content is long, which is normal.
-        -->
-        <main id="app-main-content" class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-            <!-- 
-                The grid inside is unchanged. On mobile, it will stack,
-                but now it will scroll inside this <main> container.
-            -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Main Content Grid -->
+            <main class="container mx-auto px-4 sm:px-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 sm:pt-8 pb-12">
                 
-                <!-- NEW: Glassmorphism Form Card -->
-                <div class="bg-black/30 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/10">
-                    <h2 class="text-2xl font-bold text-white mb-6">Create New Paper</h2>
-                    <form id="paper-form" class="space-y-4">
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Board -->
-                            <div>
-                                <label for="board" class="block text-sm font-medium text-slate-300">Board</label>
-                                <!-- NEW: Glassmorphism Input -->
-                                <input type="text" id="board" name="board" placeholder="e.g., CBSE, ICSE" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
-                            </div>
-                            <!-- Class/Grade -->
-                            <div>
-                                <label for="class" class="block text-sm font-medium text-slate-300">Class/Grade</label>
-                                <input type="text" id="class" name="class" placeholder="e.g., 10th, 12th" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
-                            </div>
-                        </div>
+                    <!-- Left Side: Form -->
+                    <form id="paper-form" class="glass-card p-6 sm:p-8">
+                        <h2 class="text-3xl font-semibold text-white mb-6">Paper Blueprint</h2>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Subject -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Column 1 -->
                             <div>
-                                <label for="subject" class="block text-sm font-medium text-slate-300">Subject</label>
-                                <input type="text" id="subject" name="subject" placeholder="e.g., Physics, History" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                <div class="mb-4">
+                                    <label for="board" class="block text-sm font-medium text-slate-300 mb-2">Board</label>
+                                    <input type="text" id="board" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., CBSE, ICSE" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="subject" class="block text-sm font-medium text-slate-300 mb-2">Subject</label>
+                                    <input type="text" id="subject" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Physics, History" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="difficulty" class="block text-sm font-medium text-slate-300 mb-2">Difficulty</label>
+                                    <select id="difficulty" class="w-full px-4 py-3 rounded-lg glass-input appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="easy">Easy</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="hard">Hard</option>
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="time" class="block text-sm font-medium text-slate-300 mb-2">Time (minutes)</label>
+                                    <input type="number" id="time" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" value="120">
+                                </div>
                             </div>
-                            <!-- Topic -->
+                            <!-- Column 2 -->
                             <div>
-                                <label for="topic" class="block text-sm font-medium text-slate-300">Topic</label>
-                                <input type="text" id="topic" name="topic" placeholder="e.g., Electricity, Mughal Empire" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
-                            </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Difficulty -->
-                            <div>
-                                <label for="difficulty" class="block text-sm font-medium text-slate-300">Difficulty</label>
-                                <!-- NEW: Glassmorphism Select -->
-                                <select id="difficulty" name="difficulty" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
-                                    <option class="bg-slate-800">Easy</option>
-                                    <option class="bg-slate-800" selected>Medium</option>
-                                    <option class="bg-slate-800">Hard</option>
-                                </select>
-                            </div>
-                            <!-- Language -->
-                            <div>
-                                <label for="language" class="block text-sm font-medium text-slate-300">Language</label>
-                                <select id="language" name="language" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
-                                    <option class="bg-slate-800">English</option>
-                                    <option class="bg-slate-800">Hindi</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Time -->
-                            <div>
-                                <label for="time" class="block text-sm font-medium text-slate-300">Time (minutes)</label>
-                                <input type="number" id="time" name="time" value="60" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
-                            </div>
-                            <!-- Total Marks -->
-                            <div>
-                                <label for="marks" class="block text-sm font-medium text-slate-300">Total Marks</label>
-                                <input type="number" id="marks" name="marks" value="40" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                <div class="mb-4">
+                                    <label for="grade" class="block text-sm font-medium text-slate-300 mb-2">Class / Grade</label>
+                                    <input type="text" id="grade" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 10th, 12th" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="topic" class="block text-sm font-medium text-slate-300 mb-2">Topic(s)</label>
+                                    <input type="text" id="topic" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., Magnetism, The Mughal Empire" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="language" class="block text-sm font-medium text-slate-300 mb-2">Language</label>
+                                    <select id="language" class="w-full px-4 py-3 rounded-lg glass-input appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="English" selected>English</option>
+                                        <option value="Hindi">Hindi</option>
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="marks" class="block text-sm font-medium text-slate-300 mb-2">Total Marks</label>
+                                    <input type="number" id="marks" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" value="70">
+                                </div>
                             </div>
                         </div>
 
                         <!-- Question Counts -->
-                        <fieldset class="border border-white/20 p-4 rounded-md">
-                            <legend class="text-sm font-medium text-slate-300 px-2">Question Counts</legend>
+                        <div class="mt-6 border-t border-white/10 pt-6">
+                            <h3 class="text-xl font-semibold text-white mb-4">Question Types</h3>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div>
-                                    <label for="mcq" class="block text-sm font-medium text-slate-300">MCQ</label>
-                                    <input type="number" id="mcq" name="mcq" value="5" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                    <label for="mcq" class="block text-sm font-medium text-slate-300 mb-2">MCQs</label>
+                                    <input type="number" id="mcq" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" value="10">
                                 </div>
                                 <div>
-                                    <label for="short" class="block text-sm font-medium text-slate-300">Short</label>
-                                    <input type="number" id="short" name="short" value="5" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                    <label for="short" class="block text-sm font-medium text-slate-300 mb-2">Short</label>
+                                    <input type="number" id="short" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" value="5">
                                 </div>
                                 <div>
-                                    <label for="long" class="block text-sm font-medium text-slate-300">Long</label>
-                                    <input type="number" id="long" name="long" value="2" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                    <label for="long" class="block text-sm font-medium text-slate-300 mb-2">Long</label>
+                                    <input type="number" id="long" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" value="3">
                                 </div>
                                 <div>
-                                    <label for="numerical" class="block text-sm font-medium text-slate-300">Numerical</label>
-                                    <input type="number" id="numerical" name="numerical" value="0" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm">
+                                    <label for="numerical" class="block text-sm font-medium text-slate-300 mb-2">Numerical</label>
+                                    <input type="number" id="numerical" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" value="0">
                                 </div>
                             </div>
-                        </fieldset>
-
+                        </div>
+                        
                         <!-- Extra Instructions -->
-                        <div>
-                            <label for="instructions" class="block text-sm font-medium text-slate-300">Extra Instructions</label>
-                            <textarea id="instructions" name="instructions" rows="3" class="mt-1 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm" placeholder="e.g., All questions are compulsory. Focus on derivations."></textarea>
+                        <div class="mt-6 border-t border-white/10 pt-6">
+                            <label for="extra" class="block text-sm font-medium text-slate-300 mb-2">Extra Instructions</label>
+                            <textarea id="extra" rows="3" class="w-full px-4 py-3 rounded-lg glass-input focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., 'All questions are compulsory', 'Focus on practical examples'"></textarea>
                         </div>
 
-                        <!-- Generate Button (Solid for contrast) -->
-                        <div>
-                            <button id="generate-btn" type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
-                                <span id="generate-btn-text">Generate Paper</span>
-                                <svg id="generate-spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <!-- Generate Button -->
+                        <div class="mt-8">
+                            <button type="submit" id="generate-btn" class="w-full bg-blue-600 text-white font-bold py-4 px-6 rounded-lg text-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                                <svg id="generate-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                </svg>
+                                <svg id="loading-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
+                                <span id="generate-btn-text">Generate Paper</span>
                             </button>
                         </div>
                     </form>
-                </div>
 
-                <!-- NEW: Glassmorphism Preview Card -->
-                <div class="bg-black/30 backdrop-blur-xl p-6 rounded-2xl shadow-lg border border-white/10">
-                    <!-- NEW: Layout wrapper for header -->
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6">
-                        <h2 class="text-2xl font-bold text-white mb-4 sm:mb-0">Live Preview</h2>
-                        
-                        <!-- NEW: Group for Toggle and Buttons -->
-                        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
-                            <!-- NEW: Include Answers Toggle -->
-                            <div class="flex items-center space-x-2 justify-end mb-2 sm:mb-0">
-                                <label for="include-answers-toggle" class="text-sm font-medium text-slate-300">Include Answers</label>
-                                <button type="button" id="include-answers-toggle" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" role="switch" aria-checked="false">
-                                    <span class="sr-only">Include Answers</span>
-                                    <span id="include-answers-knob" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out translate-x-0"></span>
-                                </button>
-                            </div>
-                            
-                            <!-- Existing Buttons -->
-                            <div class="flex space-x-2 justify-end">
-                                <button id="download-json-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download JSON</button>
-                                <button id="download-pdf-btn" class="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold hover:bg-white/20 transition duration-300 disabled:opacity-50" disabled>Download PDF</button>
+                    <!-- Right Side: Preview -->
+                    <div class="glass-card p-6 sm:p-8">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6">
+                            <h2 class="text-3xl font-semibold text-white mb-4 sm:mb-0">Live Preview</h2>
+                            <div class="flex items-center gap-4">
+                                <span class="text-slate-300 text-sm">Include Answers</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="include-answers-toggle">
+                                    <span class="slider"></span>
+                                </label>
                             </div>
                         </div>
+
+                        <div id="preview-container" class="bg-slate-900/50 rounded-lg p-6 min-h-[400px] max-h-[100vh] overflow-y-auto" style="font-family: 'Times New Roman', Times, serif;">
+                            <div id="preview-placeholder" class="text-center text-slate-400 pt-20">
+                                <p>Your generated question paper will appear here...</p>
+                            </div>
+                            <div id="preview-content" class="hidden">
+                                <!-- Paper will be rendered here -->
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div id="action-buttons" class="mt-6 flex flex-col sm:flex-row gap-4 hidden">
+                            <button id="save-paper-btn" class="flex-1 bg-green-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-green-700 transition">
+                                Save Paper
+                            </button>
+                            <button id="download-pdf-btn" class="flex-1 bg-red-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-red-700 transition">
+                                Download PDF
+                            </button>
+                            <button id="download-json-btn" class="flex-1 bg-slate-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-slate-700 transition">
+                                Download JSON
+                            </button>
+                        </div>
                     </div>
-                    <!-- NEW: Darker preview area -->
-                    <pre id="preview-area" class="w-full h-96 bg-black/50 text-slate-200 p-4 rounded-md overflow-auto text-sm whitespace-pre-wrap break-words">Click "Generate Paper" to see the AI output here...</pre>
-                </div>
-            </div>
-        </main>
-    </div>
 
-    <!-- =========== NAME MODAL (Glassmorphism) =========== -->
-    <div id="name-modal" class="modal-overlay">
-        <!-- NEW: Glassmorphism card -->
-        <div class="bg-black/40 backdrop-blur-xl border border-white/10 p-10 rounded-2xl shadow-2xl w-full max-w-md">
-            <h2 class="text-2xl font-bold text-white mb-4">Welcome to Coopergen!</h2>
-            <p class="text-slate-300 mb-6">Since this is your first time, please tell us your name so we can set up your account.</p>
-            <form id="name-form">
-                <label for="name" class="block text-sm font-medium text-slate-300">Full Name</label>
-                <!-- NEW: Glassmorphism Input -->
-                <input type="text" id="name" name="name" class="mt-1 mb-6 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm" required>
-                <!-- Button is solid for contrast -->
-                <button type="submit" class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
-                    Save and Continue
-                </button>
-            </form>
+                </div>
+            </main>
         </div>
-    </div>
 
-    <!-- =========== NEW: PROFILE MODAL (Glassmorphism) =========== -->
-    <div id="profile-page" class="modal-overlay">
-        <!-- NEW: Glassmorphism card -->
-        <div class="relative bg-black/40 backdrop-blur-xl border border-white/10 p-10 rounded-2xl shadow-2xl w-full max-w-md">
-            
-            <!-- Close Button -->
-            <button id="close-profile-btn" class="absolute top-4 right-4 text-slate-300 hover:text-white transition duration-200 p-2 rounded-full hover:bg-white/10">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            
-            <h2 class="text-2xl font-bold text-white mb-4">Your Profile</h2>
-            <p class="text-slate-300 mb-6">Update your personal information. Your email is linked to your Google Account.</p>
-            <form id="profile-form">
-                <div>
-                    <label for="profile-name" class="block text-sm font-medium text-slate-300">Full Name</label>
-                    <input type="text" id="profile-name" name="profile-name" class="mt-1 mb-4 block w-full rounded-md bg-black/20 border-white/20 text-white placeholder:text-slate-400 shadow-sm focus:border-blue-400 focus:ring-blue-400 sm:text-sm" required>
-                </div>
-                <div>
-                    <label for="profile-email" class="block text-sm font-medium text-slate-300">Email (read-only)</label>
-                    <input type="email" id="profile-email" name="profile-email" class="mt-1 mb-6 block w-full rounded-md bg-black/50 border-white/10 text-slate-400 shadow-sm sm:text-sm" readonly>
-                </div>
-                <button id="update-profile-btn" type="submit" class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
-                    Save Changes
-                </button>
-            </form>
+        <!-- Global Error Toast -->
+        <div id="error-toast" class="fixed bottom-5 right-5 z-50 glass-card p-4 border-red-500 border-l-4 hidden">
+            <p id="error-message" class="text-red-300">An error occurred.</p>
         </div>
+        
+        <!-- Global Success Toast -->
+        <div id="success-toast" class="fixed bottom-5 right-5 z-50 glass-card p-4 border-green-500 border-l-4 hidden">
+            <p id="success-message" class="text-green-300">Success!</p>
+        </div>
+
     </div>
 
-    <!-- =========== Error Toast (Unchanged) =========== -->
-    <div id="error-toast" class="error-toast">
-        <span id="error-message"></span>
-    </div>
 
-    <!-- =========== JAVASCRIPT (Unchanged) =========== -->
+    <!-- ===== JAVASCRIPT ===== -->
     <script type="module">
-        // 3. Import Firebase functions from CDN
+        // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, getDocs, deleteDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 4. Your web app's Firebase configuration (as provided)
+        // Firebase Configuration
         const firebaseConfig = {
-          apiKey: "AIzaSyDCkWwVm0LuqxfHczruse9gh8pGGyI4nvg",
-          authDomain: "coopergen-5332f.firebaseapp.com",
-          projectId: "coopergen-5332f",
-          storageBucket: "coopergen-5332f.firebasestorage.app",
-          messagingSenderId: "432850916875",
-          appId: "1:432850916875:web:c5dc6709400082cab3190e"
+            apiKey: "AIzaSyDCkWwVm0LuqxfHczruse9gh8pGGyI4nvg",
+            authDomain: "coopergen-5332f.firebaseapp.com",
+            projectId: "coopergen-5332f",
+            storageBucket: "coopergen-5332f.firebasestorage.app",
+            messagingSenderId: "432850916875",
+            appId: "1:432850916875:web:c5dc6709400082cab3190e"
         };
 
-        // 5. Initialize Firebase
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
-        // --- State ---
-        let currentUser = null;
-        let currentUserData = null; // NEW: To store Firestore user data
-        let generatedPaper = null; // Store the JSON response
+        // --- Global State ---
+        let currentUser = null; // Store user object
+        let currentUserId = null; // Store user ID
+        let currentPaperData = null; // Store generated paper JSON
+        let currentPaperId = null; // Store ID of the paper being previewed (if loaded from history)
 
         // --- DOM Elements ---
-        const loginPage = document.getElementById('login-page');
-        const appPage = document.getElementById('app-page');
-        const appMainContent = document.getElementById('app-main-content'); // NEW
-        const nameModal = document.getElementById('name-modal');
-        const landingPage = document.getElementById('landing-page'); // NEW
+        const views = {
+            landing: document.getElementById('landing-page'),
+            login: document.getElementById('login-page'),
+            nameModal: document.getElementById('name-modal'),
+            profileModal: document.getElementById('profile-modal'),
+            papersPage: document.getElementById('papers-page'),
+            app: document.getElementById('app-page')
+        };
+        const videoBg = document.getElementById('video-bg');
+        const auroraBg = document.getElementById('aurora-bg');
         
-        const googleLoginBtn = document.getElementById('google-login-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const userGreeting = document.getElementById('user-greeting');
-        const landingCtaBtn = document.getElementById('landing-cta-btn'); // NEW
-        const backToLandingBtn = document.getElementById('back-to-landing-btn'); // NEW
-        
-        // NEW: Profile Page Elements
-        const profilePage = document.getElementById('profile-page');
-        const profileBtn = document.getElementById('profile-btn');
-        const closeProfileBtn = document.getElementById('close-profile-btn');
-        const profileForm = document.getElementById('profile-form');
-        const profileNameInput = document.getElementById('profile-name');
-        const profileEmailInput = document.getElementById('profile-email');
-        const updateProfileBtn = document.getElementById('update-profile-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const getStartedBtn = document.getElementById('get-started-btn');
+        const backToLandingBtn = document.getElementById('back-to-landing-btn');
         
         const nameForm = document.getElementById('name-form');
         const nameInput = document.getElementById('name');
         
+        const profileBtn = document.getElementById('profile-btn');
+        const profileForm = document.getElementById('profile-form');
+        const profileEmailInput = document.getElementById('profile-email');
+        const profileNameInput = document.getElementById('profile-name');
+        const closeProfileBtn = document.getElementById('close-profile-btn');
+        const cancelProfileBtn = document.getElementById('cancel-profile-btn');
+        
+        const logoutBtn = document.getElementById('logout-btn');
+        const userGreeting = document.getElementById('user-greeting');
+        const userGreetingPapers = document.getElementById('user-greeting-papers');
+        const userInitial = document.getElementById('user-initial');
+        
         const paperForm = document.getElementById('paper-form');
         const generateBtn = document.getElementById('generate-btn');
         const generateBtnText = document.getElementById('generate-btn-text');
-        const generateSpinner = document.getElementById('generate-spinner');
+        const generateIcon = document.getElementById('generate-icon');
+        const loadingSpinner = document.getElementById('loading-spinner');
         
-        const previewArea = document.getElementById('preview-area');
-        const downloadJsonBtn = document.getElementById('download-json-btn');
+        const previewContainer = document.getElementById('preview-container');
+        const previewPlaceholder = document.getElementById('preview-placeholder');
+        const previewContent = document.getElementById('preview-content');
+        const actionButtons = document.getElementById('action-buttons');
+        const savePaperBtn = document.getElementById('save-paper-btn');
+        
         const downloadPdfBtn = document.getElementById('download-pdf-btn');
-        const videoBg = document.getElementById('video-bg'); // NEW
-        const videoBackgroundWrapper = document.getElementById('video-background-wrapper'); // NEW
-        const includeAnswersToggle = document.getElementById('include-answers-toggle'); // NEW
-        const includeAnswersKnob = document.getElementById('include-answers-knob'); // NEW
+        const downloadJsonBtn = document.getElementById('download-json-btn');
+        const includeAnswersToggle = document.getElementById('include-answers-toggle');
 
-        // NEW: Error Toast Elements
         const errorToast = document.getElementById('error-toast');
         const errorMessage = document.getElementById('error-message');
+        const successToast = document.getElementById('success-toast');
+        const successMessage = document.getElementById('success-message');
+        
+        // "My Papers" Dashboard Elements
+        const myPapersBtn = document.getElementById('my-papers-btn');
+        const backToAppBtn = document.getElementById('back-to-app-btn');
+        const papersListContainer = document.getElementById('papers-list-container');
+        const papersLoading = document.getElementById('papers-loading');
+        const papersEmpty = document.getElementById('papers-empty');
+        const headerTitleApp = document.getElementById('header-title-app');
+        const headerTitlePapers = document.getElementById('header-title-papers');
 
-        // --- View Controller ---
-        function showView(viewId) {
-            // NEW (and more robust) FIX:
-            // This fixes the "blank screen" / "stuck scroll" bug.
-            
-            // 1. Reset the *window* scroll (for landing/login)
-            // 2. Reset the *app's main content* scroll (for app-page)
-            // We run this in a timeout to ensure the view is visible FIRST.
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-                // The 'appMainContent' no longer scrolls, so we don't need this:
-                // if (appMainContent) {
-                //     appMainContent.scrollTo(0, 0);
-                // }
-            }, 0); // 0ms timeout is perfect
-
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(viewId)?.classList.add('active');
-            
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-            document.getElementById(viewId)?.classList.add('active');
-
-            // NEW: Video Background Control
-            if (viewId === 'app-page') {
-                videoBackgroundWrapper.style.opacity = '0';
-                videoBg.pause();
-            } else {
-                videoBackgroundWrapper.style.opacity = '1';
-                videoBg.play().catch(e => { /* Autoplay was fine */ });
-            }
-        }
-
-        // NEW: Error Handling Function
+        // --- Toast Notifications ---
         function showError(message) {
             errorMessage.textContent = message;
-            errorToast.classList.add('active');
-            // Hide the toast after 5 seconds
+            errorToast.classList.remove('hidden');
             setTimeout(() => {
-                errorToast.classList.remove('active');
-            }, 5000);
+                errorToast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successToast.classList.remove('hidden');
+            setTimeout(() => {
+                successToast.classList.add('hidden');
+            }, 3000);
         }
 
-        // --- Auth Logic (UPDATED with try...catch) ---
+        // --- View & Navigation ---
+        function showView(viewName) {
+            // Use setTimeout to ensure all DOM changes happen *before* scrolling
+            setTimeout(() => {
+                Object.values(views).forEach(view => {
+                    view.classList.remove('active');
+                });
+                if (views[viewName]) {
+                    views[viewName].classList.add('active');
+                }
+                
+                // Reset scroll position
+                window.scrollTo(0, 0);
+
+                // Video/Aurora logic
+                if (viewName === 'landing' || viewName === 'login') {
+                    videoBg.style.opacity = '1';
+                    if (!videoBg.paused) videoBg.play();
+                    auroraBg.style.display = 'none';
+                } else {
+                    videoBg.style.opacity = '0';
+                    videoBg.pause();
+                    auroraBg.style.display = 'block';
+                }
+            }, 0);
+        }
+
+        // --- Video Background Fallback ---
+        videoBg.onerror = () => {
+            console.warn("Video 'vid.mp4' not found or failed to load. Using aurora background.");
+            videoBg.classList.add('hidden');
+            auroraBg.style.display = 'block';
+        };
+        // Check if video can play, if not, use fallback
+        if (videoBg.HAVE_NOTHING) {
+             videoBg.onerror();
+        } else {
+            videoBg.classList.remove('hidden');
+        }
+
+        // --- Authentication ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // User is signed in
+                currentUser = user;
+                currentUserId = user.uid;
+                
                 try {
-                    // User is signed in
-                    currentUser = user;
                     const userDocRef = doc(db, "users", user.uid);
                     const userDoc = await getDoc(userDocRef);
 
                     if (userDoc.exists()) {
-                        // User exists, show app
+                        // User exists, go to app
                         const userData = userDoc.data();
-                        currentUserData = userData; // NEW: Store user data
-                        userGreeting.textContent = `Hi, ${userData.name.split(' ')[0]}!`;
-                        showView('app-page');
+                        updateUserUI(userData.name);
+                        showView('app');
                     } else {
                         // New user, ask for name
-                        nameInput.value = user.displayName || '';
-                        showView('name-modal');
+                        showView('nameModal');
                     }
                 } catch (error) {
-                    // This is where the ad blocker error gets caught!
                     console.error("Firestore Error on auth change:", error);
-                    if (error.code === 'unavailable' || (error.message && error.message.includes('ERR_BLOCKED_BY_CLIENT'))) {
-                        showError("Connection to database failed. Please disable your ad blocker for this site and refresh.");
-                    } else {
-                        showError(`Error checking user data: ${error.message}`);
+                    showError("Error: " + error.message);
+                    if (error.code === 'permission-denied') {
+                        showError("Error: Permission denied. Check Firestore rules.");
+                    } else if (error.message.includes("offline")) {
+                        showError("Connection failed. Please disable ad blockers and refresh.");
                     }
-                    // Log them out to prevent a broken state
-                    await signOut(auth);
                 }
             } else {
                 // User is signed out
                 currentUser = null;
-                showView('landing-page'); // UPDATED (was 'login-page')
+                currentUserId = null;
+                updateUserUI(null);
+                showView('landing');
             }
         });
 
-        // Google Login (UPDATED with .catch)
-        googleLoginBtn.addEventListener('click', () => {
-            signInWithPopup(auth, provider)
-                .catch((error) => {
-                    console.error("Google Sign-In Error:", error);
-                    // This will catch "auth/unauthorized-domain" errors
-                    showError(`Google Sign-In Error: ${error.message}`);
-                });
-        });
-
-        // Logout
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth);
-            // onAuthStateChanged will handle showing the landing page
-        });
-
-        // NEW: Profile Page Logic
-        profileBtn.addEventListener('click', () => {
-            if (!currentUserData) return; // Safety check
-            // Pre-fill the form
-            profileNameInput.value = currentUserData.name;
-            profileEmailInput.value = currentUserData.email || 'N/A'; // Email might not exist on old accounts
-            // Show the modal
-            profilePage.classList.add('active');
-        });
-
-        closeProfileBtn.addEventListener('click', () => {
-            // Just hide the modal, don't change the main view
-            profilePage.classList.remove('active');
-        });
-
-        profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newName = profileNameInput.value.trim();
-            if (!newName || !currentUser) {
-                showError("Name cannot be empty.");
-                return;
+        function updateUserUI(name) {
+            if (name) {
+                const greeting = `Hi, ${name.split(' ')[0]}`;
+                userGreeting.textContent = greeting;
+                userGreetingPapers.textContent = greeting;
+                userInitial.textContent = name.charAt(0).toUpperCase();
+                userGreeting.classList.remove('hidden');
+                userGreetingPapers.classList.remove('hidden');
+            } else {
+                userGreeting.classList.add('hidden');
+                userGreetingPapers.classList.add('hidden');
             }
+        }
 
-            // Disable button
-            updateProfileBtn.disabled = true;
-            updateProfileBtn.textContent = 'Saving...';
-            
+        loginBtn.onclick = async () => {
             try {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                // Use updateDoc to only change the name field
-                await updateDoc(userDocRef, {
-                    name: newName
-                });
-
-                // Update local state
-                currentUserData.name = newName;
-                userGreeting.textContent = `Hi, ${newName.split(' ')[0]}!`;
-                
-                // Close modal
-                profilePage.classList.remove('active');
-
+                await signInWithPopup(auth, provider);
             } catch (error) {
-                console.error("Error updating name:", error);
-                showError(`Failed to update name: ${error.message}`);
-            } finally {
-                // Re-enable button
-                updateProfileBtn.disabled = false;
-                updateProfileBtn.textContent = 'Save Changes';
+                console.error("Google Sign-In Error:", error);
+                showError("Sign-in failed: " + error.message);
             }
-        });
-
-        // NEW: Landing Page Buttons
-        landingCtaBtn.addEventListener('click', () => {
-            showView('login-page');
-        });
-
-        backToLandingBtn.addEventListener('click', () => {
-            showView('landing-page');
-        });
-
-        // NEW: Video Background Fallback
-        // If vid.mp4 fails to load (404, etc.), hide the video element
-        // This will let the CSS aurora background show through.
-        videoBg.onerror = () => {
-            console.log("Video background failed to load. Displaying fallback.");
-            videoBg.style.display = 'none';
         };
 
-        // NEW: Toggle Switch Logic
-        includeAnswersToggle.addEventListener('click', () => {
-            const isChecked = includeAnswersToggle.getAttribute('aria-checked') === 'true';
-            includeAnswersToggle.setAttribute('aria-checked', !isChecked);
-            if (!isChecked) {
-                includeAnswersToggle.classList.replace('bg-gray-600', 'bg-blue-600');
-                includeAnswersKnob.classList.replace('translate-x-0', 'translate-x-5');
-            } else {
-                includeAnswersToggle.classList.replace('bg-blue-600', 'bg-gray-600');
-                includeAnswersKnob.classList.replace('translate-x-5', 'translate-x-0');
-            }
-        });
+        logoutBtn.onclick = async () => {
+            await signOut(auth);
+            showView('landing');
+        };
 
-        // New User Name Submit (UPDATED with try...catch)
-        nameForm.addEventListener('submit', async (e) => {
+        getStartedBtn.onclick = () => showView('login');
+        backToLandingBtn.onclick = () => showView('landing');
+
+        // --- User Onboarding (Name Form) ---
+        nameForm.onsubmit = async (e) => {
             e.preventDefault();
             const name = nameInput.value.trim();
             if (name && currentUser) {
                 try {
-                    // This saves the name to the database as requested
-                    const userData = { // NEW
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    await setDoc(userDocRef, {
                         name: name,
                         email: currentUser.email,
-                        uid: currentUser.uid
-                    };
-                    await setDoc(doc(db, "users", currentUser.uid), userData);
-                    currentUserData = userData; // NEW: Set local data
-                    userGreeting.textContent = `Hi, ${name.split(' ')[0]}!`;
-                    showView('app-page');
+                        createdAt: serverTimestamp()
+                    });
+                    
+                    updateUserUI(name);
+                    showView('app');
                 } catch (error) {
                     console.error("Error saving name:", error);
-                    showError(`Failed to save name: ${error.message}. Please check your connection.`);
+                    showError("Failed to save name: " + error.message);
                 }
             }
-        });
+        };
+
+        // --- Profile Modal ---
+        profileBtn.onclick = async () => {
+            if (!currentUser) return;
+            try {
+                const userDoc = await getDoc(doc(db, "users", currentUserId));
+                if (userDoc.exists()) {
+                    profileEmailInput.value = currentUser.email;
+                    profileNameInput.value = userDoc.data().name;
+                    showView('profileModal');
+                }
+            } catch (error) {
+                showError("Failed to load profile.");
+            }
+        };
+
+        function closeProfileModal() {
+            showView('app');
+        }
+        closeProfileBtn.onclick = closeProfileModal;
+        cancelProfileBtn.onclick = closeProfileModal;
         
-        // --- App Logic (Form Submission) ---
-        paperForm.addEventListener('submit', async (e) => {
+        profileForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const newName = profileNameInput.value.trim();
+            if (!newName || !currentUserId) return;
+            
+            try {
+                const userDocRef = doc(db, "users", currentUserId);
+                await updateDoc(userDocRef, { name: newName });
+                
+                updateUserUI(newName);
+                showSuccess("Profile updated successfully!");
+                closeProfileModal();
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                showError("Failed to update profile: " + error.message);
+            }
+        };
+
+        // --- "My Papers" Dashboard ---
+        myPapersBtn.onclick = () => {
+            loadSavedPapers();
+            showView('papersPage');
+        };
+        
+        headerTitleApp.onclick = () => {
+             // Reset preview when going back
+            resetPreview();
+            showView('app');
+        }
+        
+        backToAppBtn.onclick = () => {
+            // Reset preview when going back
+            resetPreview();
+            showView('app');
+        };
+        headerTitlePapers.onclick = () => showView('landing');
+
+
+        async function loadSavedPapers() {
+            if (!currentUserId) return;
+            
+            papersLoading.classList.remove('hidden');
+            papersEmpty.classList.add('hidden');
+            papersListContainer.innerHTML = ''; // Clear old list
+            papersListContainer.appendChild(papersLoading); // Add loading spinner back
+            
+            try {
+                const papersCollectionRef = collection(db, "users", currentUserId, "papers");
+                const querySnapshot = await getDocs(papersCollectionRef);
+                
+                papersLoading.classList.add('hidden');
+
+                if (querySnapshot.empty) {
+                    papersListContainer.appendChild(papersEmpty);
+                    papersEmpty.classList.remove('hidden');
+                    return;
+                }
+                
+                let papersHtml = '';
+                querySnapshot.docs.forEach((doc) => {
+                    const paper = doc.data();
+                    const metadata = paper.paperData?.metadata || {};
+                    const title = metadata.subject || 'Untitled Paper';
+                    const topic = metadata.topic || 'No topic';
+                    const date = paper.createdAt?.toDate ? paper.createdAt.toDate().toLocaleDateString() : 'Unknown date';
+
+                    papersHtml += `
+                        <div class="glass-card p-4 mb-4 flex justify-between items-center transition-all hover:border-white/20">
+                            <div>
+                                <h4 class="text-lg font-semibold text-white">${title}</h4>
+                                <p class="text-sm text-slate-400">${topic} - ${metadata.class || ''}</p>
+                                <p class="text-xs text-slate-500">Saved on: ${date}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="load-paper-btn bg-blue-600 text-white text-sm py-2 px-4 rounded-lg hover:bg-blue-700" data-id="${doc.id}">Load</button>
+                                <button class="delete-paper-btn bg-red-600 text-white text-sm py-2 px-4 rounded-lg hover:bg-red-700" data-id="${doc.id}">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                papersListContainer.innerHTML = papersHtml;
+                
+                // Add event listeners for new buttons
+                document.querySelectorAll('.load-paper-btn').forEach(btn => {
+                    btn.onclick = (e) => loadPaper(e.target.dataset.id);
+                });
+                document.querySelectorAll('.delete-paper-btn').forEach(btn => {
+                    btn.onclick = (e) => deletePaper(e.target.dataset.id);
+                });
+                
+            } catch (error) {
+                console.error("Error loading saved papers:", error);
+                papersLoading.classList.add('hidden');
+                papersListContainer.innerHTML = ''; // Clear
+                papersListContainer.appendChild(papersEmpty);
+                papersEmpty.classList.remove('hidden');
+                showError("Failed to load saved papers.");
+            }
+        }
+        
+        async function loadPaper(paperId) {
+            if (!currentUserId || !paperId) return;
+            
+            try {
+                const paperDocRef = doc(db, "users", currentUserId, "papers", paperId);
+                const paperDoc = await getDoc(paperDocRef);
+                
+                if (paperDoc.exists()) {
+                    const paperData = paperDoc.data().paperData;
+                    currentPaperData = paperData;
+                    currentPaperId = paperId; // Set current paper ID
+                    
+                    renderPaper(paperData);
+                    actionButtons.classList.remove('hidden');
+                    savePaperBtn.textContent = 'Saved'; // Show as saved
+                    savePaperBtn.disabled = true;
+                    savePaperBtn.classList.add('bg-green-800', 'cursor-not-allowed');
+                    savePaperBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    
+                    showView('app'); // Switch back to app view
+                } else {
+                    showError("Paper not found.");
+                }
+            } catch (error) {
+                console.error("Error loading paper:", error);
+                showError("Failed to load paper.");
+            }
+        }
+
+        async function deletePaper(paperId) {
+            if (!currentUserId || !paperId) return;
+            
+            // Simple confirm, replace with modal later if needed
+            if (!confirm("Are you sure you want to delete this paper? This cannot be undone.")) {
+                return;
+            }
+            
+            try {
+                const paperDocRef = doc(db, "users", currentUserId, "papers", paperId);
+                await deleteDoc(paperDocRef);
+                
+                showSuccess("Paper deleted successfully.");
+                loadSavedPapers(); // Refresh the list
+                
+                // If the deleted paper is the one being previewed, reset preview
+                if (currentPaperId === paperId) {
+                    resetPreview();
+                }
+                
+            } catch (error) {
+                console.error("Error deleting paper:", error);
+                showError("Failed to delete paper.");
+            }
+        }
+
+        // --- Paper Generation ---
+        paperForm.onsubmit = async (e) => {
             e.preventDefault();
             
-            // 1. Show loading state
-            setLoading(true);
-            previewArea.textContent = "Generating your paper... This may take a moment.";
-            generatedPaper = null;
-            // Disable download buttons
-            downloadJsonBtn.disabled = true;
-            downloadPdfBtn.disabled = true;
+            // Collect data from form
+            const blueprint = {
+                board: document.getElementById('board').value,
+                grade: document.getElementById('grade').value,
+                subject: document.getElementById('subject').value,
+                topic: document.getElementById('topic').value,
+                difficulty: document.getElementById('difficulty').value,
+                language: document.getElementById('language').value,
+                time: parseInt(document.getElementById('time').value),
+                totalMarks: parseInt(document.getElementById('marks').value),
+                questionCounts: {
+                    mcq: parseInt(document.getElementById('mcq').value),
+                    short: parseInt(document.getElementById('short').value),
+                    long: parseInt(document.getElementById('long').value),
+                    numerical: parseInt(document.getElementById('numerical').value),
+                },
+                extra: document.getElementById('extra').value
+            };
 
-            // 2. Collect form data into a 'blueprint' object
-            const formData = new FormData(paperForm);
-            const blueprint = {};
-            for (let [key, value] of formData.entries()) {
-                // Convert numbers
-                if (['time', 'marks', 'mcq', 'short', 'long', 'numerical'].includes(key)) {
-                    value = Number(value);
-                }
-                blueprint[key] = value;
-            }
+            // Show loading state
+            generateBtn.disabled = true;
+            generateBtnText.textContent = 'Generating...';
+            generateIcon.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            
+            // Reset previous paper
+            resetPreview();
 
-            // 3. Call the secure backend API
             try {
+                // Call our own secure /api/generate endpoint
                 const response = await fetch('/api/generate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ blueprint }) // Send the blueprint nested
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ blueprint: blueprint }),
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                    throw new Error(errorData.error || 'Generation failed');
                 }
 
                 const data = await response.json();
                 
-                // 4. Handle response
-                generatedPaper = data.paper; // Assuming the backend returns { paper: {...} }
-                previewArea.textContent = JSON.stringify(generatedPaper, null, 2);
-                downloadJsonBtn.disabled = false;
-                downloadPdfBtn.disabled = false;
+                if (data.paper) {
+                    currentPaperData = data.paper; // Store the JSON
+                    renderPaper(currentPaperData);
+                    actionButtons.classList.remove('hidden');
+                } else {
+                    throw new Error('Invalid response from server.');
+                }
 
             } catch (error) {
                 console.error('Error calling /api/generate:', error);
-                // Also use our new error handler here
                 showError(error.message);
-                previewArea.textContent = `Error: ${error.message}\n\nDid you create the api/generate.js file and add your API key to Vercel?`;
+                previewPlaceholder.textContent = `Error: ${error.message}`;
+                previewPlaceholder.classList.remove('hidden');
             } finally {
-                // 5. Hide loading state
-                setLoading(false);
-            }
-        });
-
-        function setLoading(isLoading) {
-            if (isLoading) {
-                generateBtn.disabled = true;
-                generateBtnText.classList.add('hidden');
-                generateSpinner.classList.remove('hidden');
-            } else {
+                // Hide loading state
                 generateBtn.disabled = false;
-                generateBtnText.classList.remove('hidden');
-                generateSpinner.classList.add('hidden');
+                generateBtnText.textContent = 'Generate Paper';
+                generateIcon.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
             }
-        }
-        
-        // --- Download Logic ---
-        
-        // Download JSON
-        downloadJsonBtn.addEventListener('click', () => {
-            if (!generatedPaper) return;
+        };
+
+        function resetPreview() {
+            currentPaperData = null;
+            currentPaperId = null;
+            previewContent.innerHTML = '';
+            previewContent.classList.add('hidden');
+            previewPlaceholder.textContent = 'Your generated question paper will appear here...';
+            previewPlaceholder.classList.remove('hidden');
+            actionButtons.classList.add('hidden');
             
-            const jsonString = JSON.stringify(generatedPaper, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'coopergen-paper.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
+            // Reset save button to its default state
+            savePaperBtn.textContent = 'Save Paper';
+            savePaperBtn.disabled = false;
+            savePaperBtn.classList.remove('bg-green-800', 'cursor-not-allowed');
+            savePaperBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        }
 
-        // Download PDF
-        downloadPdfBtn.addEventListener('click', () => {
-            if (!generatedPaper) return;
+        // --- Save Paper ---
+        savePaperBtn.onclick = async () => {
+            if (!currentPaperData || !currentUserId) {
+                showError("No paper to save.");
+                return;
+            }
+            
+            // Prevent re-saving if it was loaded
+            if (currentPaperId) {
+                showError("This paper is already saved.");
+                return;
+            }
 
-            // NEW: Check toggle state
-            const includeAnswers = includeAnswersToggle.getAttribute('aria-checked') === 'true';
+            savePaperBtn.disabled = true;
+            savePaperBtn.textContent = 'Saving...';
+            
+            try {
+                const papersCollectionRef = collection(db, "users", currentUserId, "papers");
+                const docRef = await addDoc(papersCollectionRef, {
+                    paperData: currentPaperData,
+                    createdAt: serverTimestamp()
+                });
+                
+                currentPaperId = docRef.id; // Store new ID
+                showSuccess("Paper saved successfully!");
+                savePaperBtn.textContent = 'Saved';
+                savePaperBtn.classList.add('bg-green-800', 'cursor-not-allowed');
+                savePaperBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                
+            } catch (error) {
+                console.error("Error saving paper:", error);
+                showError("Failed to save paper.");
+                savePaperBtn.disabled = false;
+                savePaperBtn.textContent = 'Save Paper';
+            }
+        };
 
-            // Use the jsPDF library loaded from the CDN
+        // --- Paper Rendering ---
+        function renderPaper(data) {
+            if (!data || !data.metadata) {
+                previewPlaceholder.textContent = 'Generated paper has an invalid format.';
+                previewPlaceholder.classList.remove('hidden');
+                previewContent.classList.add('hidden');
+                return;
+            }
+            
+            const { metadata, sections } = data;
+            const showAnswers = includeAnswersToggle.checked;
+            
+            let html = `
+                <div class="text-center mb-6 text-slate-200">
+                    <h3 class="text-xl font-bold">${metadata.board}</h3>
+                    <h4 class="text-lg">${metadata.class} - ${metadata.subject}</h4>
+                    <p class="text-sm">${metadata.topic}</p>
+                    <div class="flex justify-between text-sm mt-2">
+                        <span>Total Marks: ${metadata.totalMarks}</span>
+                        <span>Time: ${metadata.time} minutes</span>
+                    </div>
+                </div>
+            `;
+
+            sections.forEach(section => {
+                html += `
+                    <div class="mb-6">
+                        <h5 class="text-lg font-bold border-b border-slate-600 pb-2 mb-4 text-slate-100">${section.title} (Marks: ${section.marks})</h5>
+                        <ol class="list-decimal list-outside ml-5 space-y-4 text-slate-300">
+                `;
+                
+                section.questions.forEach(q => {
+                    html += `<li class="mb-4 pl-2">`;
+                    html += `<p class="font-semibold">${q.question} <span class="font-normal text-slate-400">(${q.marks} marks)</span></p>`;
+                    
+                    if (q.options) {
+                        html += '<ul class="list-none mt-2 space-y-1">';
+                        q.options.forEach(opt => {
+                            html += `<li>( ${opt} )</li>`;
+                        });
+                        html += '</ul>';
+                        if (showAnswers) {
+                            html += `<p class="text-green-400 mt-2"><strong>Answer:</strong> ${q.answer}</p>`;
+                        }
+                    } else {
+                        if (showAnswers) {
+                            html += `<p class="text-green-400 mt-2"><strong>Answer:</strong> ${q.answer}</p>`;
+                        }
+                    }
+                    html += `</li>`;
+                });
+
+                html += `</ol></div>`;
+            });
+
+            previewContent.innerHTML = html;
+            previewPlaceholder.classList.add('hidden');
+            previewContent.classList.remove('hidden');
+        }
+
+        // Re-render paper when "Include Answers" is toggled
+        includeAnswersToggle.onchange = () => {
+            if (currentPaperData) {
+                renderPaper(currentPaperData);
+            }
+        };
+
+        // --- Download Functions ---
+        downloadJsonBtn.onclick = () => {
+            if (!currentPaperData) return;
+            const dataStr = JSON.stringify(currentPaperData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', `${currentPaperData.metadata.subject || 'paper'}.json`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        downloadPdfBtn.onclick = () => {
+            if (!currentPaperData) return;
+            
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const { metadata, sections } = currentPaperData;
+            const showAnswers = includeAnswersToggle.checked;
+            let y = 20; // Y position for layout
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 20;
 
-            doc.setFont("helvetica", "bold");
+            function checkPageBreak(lines = 1) {
+                if (y + (lines * 10) > pageHeight - margin) {
+                    doc.addPage();
+                    y = margin;
+                }
+            }
+            
+            // --- PDF Title ---
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text(metadata.board || 'Board', 105, y, { align: 'center' });
+            y += 8;
+            checkPageBreak();
+            
             doc.setFontSize(16);
-            doc.text("Question Paper", 105, 20, { align: 'center' });
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${metadata.class || ''} - ${metadata.subject || ''}`, 105, y, { align: 'center' });
+            y += 7;
+            checkPageBreak();
+            
+            doc.setFontSize(14);
+            doc.text(metadata.topic || '', 105, y, { align: 'center' });
+            y += 10;
+            checkPageBreak();
 
             doc.setFontSize(12);
-            doc.setFont("helvetica", "normal");
+            doc.text(`Total Marks: ${metadata.totalMarks}`, margin, y);
+            doc.text(`Time: ${metadata.time} minutes`, 210 - margin, y, { align: 'right' });
+            y += 15;
+            checkPageBreak();
             
-            // Add metadata
-            const meta = generatedPaper.metadata;
-            if(meta) {
-                doc.text(`Board: ${meta.board || 'N/A'}`, 20, 35);
-                doc.text(`Class: ${meta.class || 'N/A'}`, 20, 42);
-                doc.text(`Subject: ${meta.subject || 'N/A'}`, 20, 49);
-                doc.text(`Time: ${meta.time || 'N/A'} mins`, 150, 35);
-                doc.text(`Marks: ${meta.totalMarks || 'N/A'}`, 150, 42);
-            }
+            // --- PDF Sections ---
+            doc.setFont('helvetica', 'normal');
             
-            let yPos = 65; // Starting Y position for questions
-
-            // Simple function to add text with word wrap
-            const addWrappedText = (text, y) => {
-                const lines = doc.splitTextToSize(text, 170); // 170mm width
-                doc.text(lines, 20, y);
-                return y + (lines.length * 7); // Increment Y pos
-            };
-            
-            // Loop through sections and questions
-            if (generatedPaper.sections) {
-                generatedPaper.sections.forEach(section => {
-                    if (yPos > 270) { doc.addPage(); yPos = 20; } // Add new page
-                    doc.setFont("helvetica", "bold");
-                    yPos = addWrappedText(`Section: ${section.title} (${section.marks} Marks)`, yPos);
-                    yPos += 2; // Extra space
-
-                    section.questions.forEach(q => {
-                        if (yPos > 270) { doc.addPage(); yPos = 20; } // Add new page
-                        doc.setFont("helvetica", "normal");
-                        const qText = `${q.q_num}. ${q.question} (${q.marks} marks)`;
-                        yPos = addWrappedText(qText, yPos);
-
-                        // NEW: Add options for MCQs
-                        if (q.options && Array.isArray(q.options)) {
-                            yPos += 2; // small space
-                            q.options.forEach(opt => {
-                                yPos = addWrappedText(`  - ${opt}`, yPos);
-                            });
+            sections.forEach(section => {
+                checkPageBreak(2);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${section.title} (Marks: ${section.marks})`, margin, y);
+                doc.setLineWidth(0.5);
+                y += 2;
+                doc.line(margin, y, 210 - margin, y); // Underline
+                y += 10;
+                
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                
+                section.questions.forEach(q => {
+                    checkPageBreak(2);
+                    // Split question text
+                    const qText = `${q.q_num}. ${q.question} (${q.marks} marks)`;
+                    const qLines = doc.splitTextToSize(qText, 170); // 170mm width
+                    doc.text(qLines, margin, y);
+                    y += qLines.length * 6; // Adjust y based on lines
+                    
+                    if (q.options) {
+                        checkPageBreak(q.options.length);
+                        q.options.forEach((opt, index) => {
+                            doc.text(`(${String.fromCharCode(97 + index)}) ${opt}`, margin + 10, y);
+                            y += 7;
+                        });
+                        if (showAnswers) {
+                            checkPageBreak();
+                            doc.setFont('helvetica', 'bold');
+                            doc.setTextColor(0, 100, 0); // Green
+                            doc.text(`Answer: ${q.answer}`, margin + 10, y);
+                            y += 7;
+                            doc.setTextColor(0, 0, 0); // Reset color
+                            doc.setFont('helvetica', 'normal');
                         }
-                        
-                        // NEW: Add answer (for review)
-                        // UPDATED: Check toggle state
-                        if (includeAnswers && q.answer) {
-                            yPos += 1;
-                            doc.setFont("helvetica", "italic");
-                            yPos = addWrappedText(`  Answer: ${q.answer}`, yPos);
-                            doc.setFont("helvetica", "normal");
+                    } else {
+                        if (showAnswers) {
+                            checkPageBreak(2);
+                            doc.setFont('helvetica', 'bold');
+                            doc.setTextColor(0, 100, 0); // Green
+                            const aLines = doc.splitTextToSize(`Answer: ${q.answer}`, 160);
+                            doc.text(aLines, margin + 10, y);
+                            y += aLines.length * 6;
+                            doc.setTextColor(0, 0, 0); // Reset color
+                            doc.setFont('helvetica', 'normal');
                         }
-
-                        yPos += 4; // Space after question
-                    });
-                    yPos += 6; // Space after section
+                    }
+                    y += 5; // Extra space between questions
                 });
-            }
+            });
 
-            doc.save('coopergen-paper.pdf');
-        });
+            doc.save(`${metadata.subject || 'paper'}.pdf`);
+        };
 
     </script>
 </body>
