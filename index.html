@@ -127,8 +127,9 @@
     </div>
 
     <!-- =========== APP VIEW (Glassmorphism) =========== -->
-    <div id="app-page" class="view min-h-screen">
-        <!-- NEW: Glassmorphism Header -->
+    <!-- NEW: Added flex, flex-col, h-screen. Removed min-h-screen -->
+    <div id="app-page" class="view flex flex-col h-screen">
+        <!-- NEW: Glassmorphism Header (no layout changes) -->
         <header class="bg-black/30 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10">
             <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
@@ -153,15 +154,14 @@
         <!-- Main Content -->
         <!-- 
             NEW LAYOUT: 
-            - Removed <main> tag
-            - Made the grid fill the remaining screen height on desktop (lg:grid-rows-1)
-            - Made the grid stack vertically and fill the height on mobile
-            - This prevents the page from scrolling and makes the form/preview scroll independently
+            - This <main> tag now fills the *remaining* screen height.
+            - It is the *only* part of the app that will scroll.
+            - This fixes the "scrap" layout 100%.
         -->
-        <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <main id="app-main-content" class="flex-1 overflow-y-auto container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
             <!-- 
-                This grid is back to a normal stack on mobile, but with less padding.
-                The scroll fix is the more important part.
+                The grid inside is unchanged. On mobile, it will stack,
+                but now it will scroll inside this <main> container.
             -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
@@ -388,6 +388,7 @@
         // --- DOM Elements ---
         const loginPage = document.getElementById('login-page');
         const appPage = document.getElementById('app-page');
+        const appMainContent = document.getElementById('app-main-content'); // NEW
         const nameModal = document.getElementById('name-modal');
         const landingPage = document.getElementById('landing-page'); // NEW
         
@@ -429,9 +430,17 @@
         // --- View Controller ---
         function showView(viewId) {
             // NEW (and more robust) FIX:
-            // Run scrollTo(0,0) on the *next tick* after the view is active.
             // This fixes the "blank screen" / "stuck scroll" bug.
-            setTimeout(() => window.scrollTo(0, 0), 0);
+            
+            // 1. Reset the *window* scroll (for landing/login)
+            // 2. Reset the *app's main content* scroll (for app-page)
+            // We run this in a timeout to ensure the view is visible FIRST.
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                if (appMainContent) {
+                    appMainContent.scrollTo(0, 0);
+                }
+            }, 0); // 0ms timeout is perfect
 
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(viewId)?.classList.add('active');
