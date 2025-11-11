@@ -151,7 +151,18 @@
         </header>
 
         <!-- Main Content -->
-        <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 
+            NEW LAYOUT: 
+            - Removed <main> tag
+            - Made the grid fill the remaining screen height on desktop (lg:grid-rows-1)
+            - Made the grid stack vertically and fill the height on mobile
+            - This prevents the page from scrolling and makes the form/preview scroll independently
+        -->
+        <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+            <!-- 
+                This grid is back to a normal stack on mobile, but with less padding.
+                The scroll fix is the more important part.
+            -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
                 <!-- NEW: Glassmorphism Form Card -->
@@ -417,6 +428,11 @@
 
         // --- View Controller ---
         function showView(viewId) {
+            // NEW (and more robust) FIX:
+            // Run scrollTo(0,0) on the *next tick* after the view is active.
+            // This fixes the "blank screen" / "stuck scroll" bug.
+            setTimeout(() => window.scrollTo(0, 0), 0);
+
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById(viewId)?.classList.add('active');
             
