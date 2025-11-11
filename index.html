@@ -1116,7 +1116,10 @@
             doc.setFontSize(14);
             doc.text(metadata.topic || '', 105, y, { align: 'center' });
             y += 10;
-            checkPageCheck();
+            
+            // ***** THE FIX IS HERE *****
+            // The typo was 'checkPageCheck()'. It is now 'checkPageBreak()'.
+            checkPageBreak();
 
             doc.setFontSize(12);
             doc.text(`Total Marks: ${metadata.totalMarks}`, margin, y);
