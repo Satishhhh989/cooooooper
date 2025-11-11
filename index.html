@@ -169,7 +169,8 @@
 
         <!-- ===== LANDING PAGE (VIEW 0) ===== -->
         <div id="landing-page" class="view active flex flex-col items-center justify-center text-center h-screen p-4">
-            <div classs="relative z-10">
+            <!-- FIXED TYPO: "classs" is now "class" -->
+            <div class="relative z-10">
                 <h1 class="text-5xl sm:text-7xl md:text-8xl font-bold text-white mb-6">
                     Coopergen
                 </h1>
@@ -260,19 +261,22 @@
             </header>
 
             <!-- Main Content -->
-            <main class="container mx-auto px-4 sm:px-6 py-8">
-                <h2 class="text-3xl font-semibold text-white mb-6">My Saved Papers</h2>
-                <div id="papers-list-container" class="papers-list glass-card p-6 min-h-[400px] max-h-[70vh] overflow-y-auto">
-                    <!-- Loading state -->
-                    <div id="papers-loading" class="text-center text-slate-400 py-20">
-                        <p>Loading your saved papers...</p>
+            <main class="container mx-auto px-4 sm:px-6">
+                <!-- FIXED: Added padding here to fix "empty at top" -->
+                <div class="pt-4 sm:pt-8 pb-12">
+                    <h2 class="text-3xl font-semibold text-white mb-6">My Saved Papers</h2>
+                    <div id="papers-list-container" class="papers-list glass-card p-6 min-h-[400px] max-h-[70vh] overflow-y-auto">
+                        <!-- Loading state -->
+                        <div id="papers-loading" class="text-center text-slate-400 py-20">
+                            <p>Loading your saved papers...</p>
+                        </div>
+                        <!-- Empty state -->
+                        <div id="papers-empty" class="text-center text-slate-400 py-20 hidden">
+                            <h3 class="text-xl font-medium mb-2">No papers found</h3>
+                            <p>Generate a new paper and click "Save" to see it here.</p>
+                        </div>
+                        <!-- Papers will be injected here -->
                     </div>
-                    <!-- Empty state -->
-                    <div id="papers-empty" class="text-center text-slate-400 py-20 hidden">
-                        <h3 class="text-xl font-medium mb-2">No papers found</h3>
-                        <p>Generate a new paper and click "Save" to see it here.</p>
-                    </div>
-                    <!-- Papers will be injected here -->
                 </div>
             </main>
         </div>
@@ -303,6 +307,7 @@
 
             <!-- Main Content Grid -->
             <main class="container mx-auto px-4 sm:px-6">
+                <!-- FIXED: Added padding here to fix "empty at top" -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-4 sm:pt-8 pb-12">
                 
                     <!-- Left Side: Form -->
@@ -563,29 +568,32 @@
 
         // --- View & Navigation ---
         function showView(viewName) {
-            // Use setTimeout to ensure all DOM changes happen *before* scrolling
+            // Deactivate all views first
+            Object.values(views).forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Activate the target view
+            if (views[viewName]) {
+                views[viewName].classList.add('active');
+            }
+            
+            // FIXED: Use a small delay (50ms) to ensure the DOM is ready
+            // for the scroll command. This fixes the "stuck" bug.
             setTimeout(() => {
-                Object.values(views).forEach(view => {
-                    view.classList.remove('active');
-                });
-                if (views[viewName]) {
-                    views[viewName].classList.add('active');
-                }
-                
-                // Reset scroll position
                 window.scrollTo(0, 0);
+            }, 50); // 50ms delay is more reliable
 
-                // Video/Aurora logic
-                if (viewName === 'landing' || viewName === 'login') {
-                    videoBg.style.opacity = '1';
-                    if (!videoBg.paused) videoBg.play();
-                    auroraBg.style.display = 'none';
-                } else {
-                    videoBg.style.opacity = '0';
-                    videoBg.pause();
-                    auroraBg.style.display = 'block';
-                }
-            }, 0);
+            // Video/Aurora logic
+            if (viewName === 'landing' || viewName === 'login') {
+                videoBg.style.opacity = '1';
+                if (!videoBg.paused) videoBg.play();
+                auroraBg.style.display = 'none';
+            } else {
+                videoBg.style.opacity = '0';
+                videoBg.pause();
+                auroraBg.style.display = 'block';
+            }
         }
 
         // --- Video Background Fallback ---
@@ -1108,7 +1116,7 @@
             doc.setFontSize(14);
             doc.text(metadata.topic || '', 105, y, { align: 'center' });
             y += 10;
-            checkPageBreak();
+            checkPageCheck();
 
             doc.setFontSize(12);
             doc.text(`Total Marks: ${metadata.totalMarks}`, margin, y);
